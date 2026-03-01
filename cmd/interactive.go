@@ -17,6 +17,7 @@ import (
 	"github.com/mlihgenel/fileconverter-cli/internal/config"
 	"github.com/mlihgenel/fileconverter-cli/internal/converter"
 	"github.com/mlihgenel/fileconverter-cli/internal/installer"
+	"github.com/mlihgenel/fileconverter-cli/internal/profile"
 	convwatch "github.com/mlihgenel/fileconverter-cli/internal/watch"
 )
 
@@ -3546,6 +3547,14 @@ func (m interactiveModel) viewSettings() string {
 	b.WriteString(dimStyle.Render(fmt.Sprintf("  report: %s", m.defaultReport)))
 	b.WriteString("\n\n")
 
+	b.WriteString(lipgloss.NewStyle().Foreground(textColor).Render("  Kullanilabilir profiller:"))
+	b.WriteString("\n")
+	for _, line := range settingsProfileLines() {
+		b.WriteString(dimStyle.Render("  " + line))
+		b.WriteString("\n")
+	}
+	b.WriteString("\n")
+
 	options := []string{"Varsayilan dizini degistir", "Ana menuye don"}
 	for i, opt := range options {
 		if i == m.cursor {
@@ -3561,6 +3570,23 @@ func (m interactiveModel) viewSettings() string {
 	b.WriteString("\n")
 
 	return b.String()
+}
+
+func settingsProfileLines() []string {
+	items, err := profile.List()
+	if err != nil || len(items) == 0 {
+		return []string{"profil listesi yuklenemedi"}
+	}
+
+	lines := make([]string, 0, len(items))
+	for _, item := range items {
+		source := item.Source
+		if source == "" {
+			source = "builtin"
+		}
+		lines = append(lines, fmt.Sprintf("- %s (%s)", item.Name, source))
+	}
+	return lines
 }
 
 // viewSettingsBrowser dizin seçici ekranı

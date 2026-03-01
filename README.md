@@ -64,7 +64,7 @@ File Converter CLI, dosya dönüştürme işlemlerini internet servislerine yük
 - Çıktı dizinine yazarken klasör yapısını koruma (`batch --preserve-tree`).
 - Çakışma politikası (`--on-conflict`: `overwrite`, `skip`, `versioned`).
 - Otomatik retry (`--retry`, `--retry-delay`) ve raporlama (`--report`, `--report-file`).
-- Hazır profil sistemi (`--profile`: `social-story`, `podcast-clean`, `archive-lossless`).
+- Hazır + kullanıcı tanımlı profil sistemi (`--profile`: built-in profiller ve `~/.fileconverter/profiles/*.toml`).
 - Metadata kontrolü (`--preserve-metadata`, `--strip-metadata`).
 - Klasör izleme ile otomatik dönüşüm (`watch` komutu, event-driven + polling fallback).
 - Makine-okunur CLI çıktısı (`--output-format json`).
@@ -133,6 +133,7 @@ fileconverter-cli help video
 fileconverter-cli help formats
 fileconverter-cli help resize-presets
 fileconverter-cli help completion
+fileconverter-cli help profiles
 ```
 
 ### İnteraktif mod (TUI)
@@ -209,6 +210,10 @@ fileconverter-cli convert fotograf.webp --to png --width 12 --height 18 --unit c
 
 # Profil kullanımı (story çıktı için)
 fileconverter-cli convert klip.mp4 --to mp4 --profile social-story
+
+# Kullanıcı profili oluştur ve kullan
+fileconverter-cli profiles create story-fast --quality 83 --preset story --resize-mode fit --metadata-mode strip
+fileconverter-cli convert klip.mp4 --to mp4 --profile story-fast
 
 # Metadata temizleme
 fileconverter-cli convert kamera.mov --to mp4 --strip-metadata
@@ -344,6 +349,8 @@ fileconverter-cli video trim input.mp4 --mode remove --ranges "5-8,20-25" --dry-
 | `fileconverter-cli info <dosya>` | Dosya bilgisi gösterir (format, boyut, çözünürlük, codec) | `fileconverter-cli info foto.jpg` |
 | `fileconverter-cli formats` | Desteklenen dönüşümleri listeler | `fileconverter-cli formats --from pdf` |
 | `fileconverter-cli completion <shell>` | Shell completion üretir | `fileconverter-cli completion zsh` |
+| `fileconverter-cli profiles list` | Built-in ve kullanıcı profillerini listeler | `fileconverter-cli profiles list` |
+| `fileconverter-cli profiles create [ad]` | Yeni kullanıcı profili oluşturur | `fileconverter-cli profiles create story-fast --quality 83` |
 | `fileconverter-cli help [komut]` | Komut yardımı gösterir | `fileconverter-cli help batch` |
 
 ## Flag Referansı
@@ -363,7 +370,7 @@ fileconverter-cli video trim input.mp4 --mode remove --ranges "5-8,20-25" --dry-
 | Flag | Kısa | Açıklama |
 |---|---|---|
 | `--to` | `-t` | Hedef format (zorunlu) |
-| `--profile` | - | Hazır profil: `social-story`, `podcast-clean`, `archive-lossless` |
+| `--profile` | - | Profil adı: built-in veya `~/.fileconverter/profiles/` altındaki kullanıcı profili |
 | `--quality` | `-q` | Kalite seviyesi (1-100) |
 | `--name` | `-n` | Çıktı dosya adı (uzantısız) |
 | `--on-conflict` | - | Çakışma politikası: `overwrite`, `skip`, `versioned` |
@@ -384,7 +391,7 @@ fileconverter-cli video trim input.mp4 --mode remove --ranges "5-8,20-25" --dry-
 |---|---|---|
 | `--from` | `-f` | Kaynak format (zorunlu) |
 | `--to` | `-t` | Hedef format (zorunlu) |
-| `--profile` | - | Hazır profil: `social-story`, `podcast-clean`, `archive-lossless` |
+| `--profile` | - | Profil adı: built-in veya `~/.fileconverter/profiles/` altındaki kullanıcı profili |
 | `--recursive` | `-r` | Alt dizinleri de tara |
 | `--preserve-tree` | - | Dizin modunda `--output` altına kaynak klasör yapısını korur |
 | `--dry-run` | - | Dönüştürmeden önce planı göster |
@@ -410,7 +417,7 @@ fileconverter-cli video trim input.mp4 --mode remove --ranges "5-8,20-25" --dry-
 |---|---|---|
 | `--from` | `-f` | Kaynak format (zorunlu) |
 | `--to` | `-t` | Hedef format (zorunlu) |
-| `--profile` | - | Hazır profil: `social-story`, `podcast-clean`, `archive-lossless` |
+| `--profile` | - | Profil adı: built-in veya `~/.fileconverter/profiles/` altındaki kullanıcı profili |
 | `--recursive` | `-r` | Alt dizinleri de izle |
 | `--quality` | `-q` | Kalite seviyesi (1-100) |
 | `--on-conflict` | - | Çakışma politikası: `overwrite`, `skip`, `versioned` |
@@ -425,7 +432,7 @@ fileconverter-cli video trim input.mp4 --mode remove --ranges "5-8,20-25" --dry-
 
 | Flag | Kısa | Açıklama |
 |---|---|---|
-| `--profile` | - | Hazır profil: `social-story`, `podcast-clean`, `archive-lossless` |
+| `--profile` | - | Profil adı: built-in veya `~/.fileconverter/profiles/` altındaki kullanıcı profili |
 | `--quality` | `-q` | Varsayılan kalite seviyesi (1-100) |
 | `--on-conflict` | - | Çakışma politikası: `overwrite`, `skip`, `versioned` |
 | `--preserve-metadata` | - | Metadata bilgisini korumayı dener |
@@ -450,7 +457,7 @@ fileconverter-cli video trim input.mp4 --mode remove --ranges "5-8,20-25" --dry-
 | `--to` | - | Hedef format (`mp4`, `mov` vb.) |
 | `--output-file` | - | Tam çıktı dosya yolu |
 | `--name` | `-n` | Çıktı dosya adı (uzantısız) |
-| `--profile` | - | Hazır profil: `social-story`, `podcast-clean`, `archive-lossless` |
+| `--profile` | - | Profil adı: built-in veya `~/.fileconverter/profiles/` altındaki kullanıcı profili |
 | `--quality` | `-q` | Reencode modunda kalite seviyesi |
 | `--on-conflict` | - | Çakışma politikası: `overwrite`, `skip`, `versioned` |
 | `--preserve-metadata` | - | Metadata bilgisini korumayı dener |
@@ -473,6 +480,12 @@ fileconverter-cli video trim input.mp4 --mode remove --ranges "5-8,20-25" --dry-
 - `social-story`: story formatı için hızlı preset (`story`, `pad`, orta-yüksek kalite).
 - `podcast-clean`: ses akışlarında daha temiz ve güvenli varsayılanlar.
 - `archive-lossless`: arşiv odaklı kalite/metadata koruma odaklı ayarlar.
+
+Kullanıcı profilleri:
+- Dizin: `~/.fileconverter/profiles/`
+- Format: TOML
+- Komutlar: `fileconverter-cli profiles list` ve `fileconverter-cli profiles create`
+- Aynı isimli kullanıcı profili, built-in profilin alanlarını override eder.
 
 ## Desteklenen Formatlar
 
@@ -512,6 +525,7 @@ Uygulama interaktif modda eksik araçları kontrol eder ve kurulum için yönlen
 - Konfigürasyon dosyası: `~/.fileconverter/config.json`
 - Bu dosyada ilk çalıştırma bilgisi ve varsayılan çıktı dizini tutulur.
 - İnteraktif moddan varsayılan çıktı dizinini değiştirebilirsiniz.
+- Kullanıcı tanımlı profiller `~/.fileconverter/profiles/*.toml` altında tutulur.
 
 ### Proje bazlı yapılandırma (`.fileconverter.toml`)
 
@@ -595,6 +609,7 @@ fileconverter-cli/
 ├── internal/batch/       # Worker pool ve batch yürütme
 ├── internal/pipeline/    # Çok adımlı pipeline yürütme
 ├── internal/watch/       # Klasör izleme altyapısı
+├── internal/profile/     # Built-in ve kullanıcı profilleri
 ├── internal/config/      # Uygulama ayarları
 ├── internal/installer/   # Bağımlılık kontrol/kurulum yardımcıları
 ├── internal/ui/          # Ortak terminal UI yardımcıları
