@@ -254,12 +254,14 @@ const (
 	stateSelectCategory
 	stateSelectSourceFormat
 	stateSelectTargetFormat
+	stateSelectProfile
 	stateFileBrowser
 	stateConverting
 	stateConvertDone
 	stateBatchSelectCategory
 	stateBatchSelectSourceFormat
 	stateBatchSelectTargetFormat
+	stateBatchSelectProfile
 	stateBatchConverting
 	stateBatchDone
 	stateFormats
@@ -331,9 +333,13 @@ type interactiveModel struct {
 	flowAudioNormalize bool
 
 	// Dönüşüm bilgileri
-	sourceFormat string
-	targetFormat string
-	selectedFile string
+	sourceFormat    string
+	targetFormat    string
+	selectedFile    string
+	selectedProfile string
+	profileValue    profile.Definition
+	profileActive   bool
+	profileChoices  []profile.Definition
 
 	// Dosya tarayıcı
 	browserDir    string
@@ -1058,6 +1064,8 @@ func (m interactiveModel) View() string {
 		return m.viewSelectFormat("Kaynak format seçin:")
 	case stateSelectTargetFormat:
 		return m.viewSelectFormat("Hedef format seçin:")
+	case stateSelectProfile:
+		return m.viewSelectProfile(false)
 	case stateFileBrowser:
 		return m.viewFileBrowser()
 	case stateConverting, stateBatchConverting:
@@ -1073,6 +1081,8 @@ func (m interactiveModel) View() string {
 		return m.viewSelectFormat("Batch — Kaynak format seçin:")
 	case stateBatchSelectTargetFormat:
 		return m.viewSelectFormat("Batch — Hedef format seçin:")
+	case stateBatchSelectProfile:
+		return m.viewSelectProfile(true)
 	case stateBatchDone:
 		return m.viewBatchDone()
 	case stateFormats:
@@ -1367,6 +1377,56 @@ func (m interactiveModel) viewSelectFormat(title string) string {
 	return b.String()
 }
 
+func (m interactiveModel) viewSelectProfile(isBatch bool) string {
+	var b strings.Builder
+
+	b.WriteString("\n")
+
+	cat := categories[m.selectedCategory]
+	crumb := fmt.Sprintf("  %s %s › %s › %s",
+		cat.Icon,
+		cat.Name,
+		lipgloss.NewStyle().Bold(true).Foreground(secondaryColor).Render(strings.ToUpper(m.sourceFormat)),
+		lipgloss.NewStyle().Bold(true).Foreground(accentColor).Render(strings.ToUpper(m.targetFormat)))
+	b.WriteString(breadcrumbStyle.Render(crumb))
+	b.WriteString("\n\n")
+
+	title := "Profil seçin:"
+	if isBatch {
+		title = "Batch — Profil seçin:"
+	}
+	b.WriteString(menuTitleStyle.Render(fmt.Sprintf(" ◆ %s ", title)))
+	b.WriteString("\n\n")
+
+	for i, choice := range m.choices {
+		icon := ""
+		desc := ""
+		if i < len(m.choiceIcons) {
+			icon = m.choiceIcons[i]
+		}
+		if i < len(m.choiceDescs) {
+			desc = m.choiceDescs[i]
+		}
+		label := menuLine(icon, choice)
+		if i == m.cursor {
+			b.WriteString(selectedItemStyle.Render("▸ " + label))
+		} else {
+			b.WriteString(normalItemStyle.Render("  " + label))
+		}
+		b.WriteString("\n")
+		if strings.TrimSpace(desc) != "" {
+			b.WriteString(descStyle.Render("     " + desc))
+			b.WriteString("\n")
+		}
+	}
+
+	b.WriteString("\n")
+	b.WriteString(dimStyle.Render("  ↑↓ Gezin  •  Enter Seç  •  Esc Geri"))
+	b.WriteString("\n")
+
+	return b.String()
+}
+
 func (m interactiveModel) viewFileBrowser() string {
 	var b strings.Builder
 
@@ -1470,8 +1530,12 @@ func (m interactiveModel) viewFileBrowser() string {
 	// Çıktı bilgisi
 	b.WriteString(dimStyle.Render(fmt.Sprintf("  💾 Çıktı: %s", shortenPath(m.defaultOutput))))
 	b.WriteString("\n")
-	b.WriteString(dimStyle.Render(fmt.Sprintf("  Ayar: kalite=%d, conflict=%s", m.defaultQuality, m.defaultOnConflict)))
+	b.WriteString(dimStyle.Render(fmt.Sprintf("  Ayar: kalite=%d, conflict=%s", m.effectiveQuality(), m.effectiveOnConflict())))
 	b.WriteString("\n")
+	if m.profileActive {
+		b.WriteString(dimStyle.Render(fmt.Sprintf("  Profil: %s", m.selectedProfile)))
+		b.WriteString("\n")
+	}
 	if m.flowVideoTrim {
 		b.WriteString(dimStyle.Render("  Not: Video seçince önce işlem modu seçilir (klip çıkar / aralığı sil)"))
 		b.WriteString("\n")
@@ -1854,6 +1918,7 @@ func (m interactiveModel) handleEnter() (tea.Model, tea.Cmd) {
 	case stateSelectSourceFormat:
 		m.sourceFormat = converter.NormalizeFormat(m.choices[m.cursor])
 		m.resetResizeState()
+		m.clearSelectedProfile()
 		return m.goToTargetFormatSelect(false), nil
 
 	case stateSelectTargetFormat:
@@ -1861,6 +1926,10 @@ func (m interactiveModel) handleEnter() (tea.Model, tea.Cmd) {
 		if m.flowResizeOnly {
 			return m.goToResizeConfig(false), nil
 		}
+		return m.goToProfileSelect(false), nil
+
+	case stateSelectProfile:
+		m.applySelectedProfileChoice()
 		return m.goToFileBrowser(), nil
 
 	case stateFileBrowser:
@@ -2006,6 +2075,7 @@ func (m interactiveModel) handleEnter() (tea.Model, tea.Cmd) {
 	case stateBatchSelectSourceFormat:
 		m.sourceFormat = converter.NormalizeFormat(m.choices[m.cursor])
 		m.resetResizeState()
+		m.clearSelectedProfile()
 		return m.goToTargetFormatSelect(true), nil
 
 	case stateBatchSelectTargetFormat:
@@ -2013,6 +2083,10 @@ func (m interactiveModel) handleEnter() (tea.Model, tea.Cmd) {
 		if m.flowResizeOnly {
 			return m.goToResizeConfig(true), nil
 		}
+		return m.goToProfileSelect(true), nil
+
+	case stateBatchSelectProfile:
+		m.applySelectedProfileChoice()
 		return m.goToBatchBrowserOrDependencyCheck()
 
 	case stateResizeConfig:
@@ -2516,6 +2590,7 @@ func (m interactiveModel) goToMainMenu() interactiveModel {
 	m.sourceFormat = ""
 	m.targetFormat = ""
 	m.selectedFile = ""
+	m.clearSelectedProfile()
 	m.selectedCategory = 0
 	m.browserItems = nil
 	m.resultMsg = ""
@@ -2608,6 +2683,8 @@ func (m interactiveModel) goBack() interactiveModel {
 		return m.goToCategorySelect(false, m.flowResizeOnly, false)
 	case stateSelectTargetFormat:
 		return m.goToSourceFormatSelect(false)
+	case stateSelectProfile:
+		return m.goToTargetFormatSelect(false)
 	case stateFileBrowser:
 		if m.flowVideoTrim || m.flowExtractAudio || m.flowSnapshot || m.flowMerge || m.flowAudioNormalize {
 			return m.goToParentSection()
@@ -2615,18 +2692,20 @@ func (m interactiveModel) goBack() interactiveModel {
 		if m.flowResizeOnly {
 			return m.goToResizeConfig(false)
 		}
-		return m.goToTargetFormatSelect(false)
+		return m.goToProfileSelect(false)
 	case stateBatchSelectCategory:
 		return m.goToParentSection()
 	case stateBatchSelectSourceFormat:
 		return m.goToCategorySelect(true, m.flowResizeOnly, m.flowIsWatch)
 	case stateBatchSelectTargetFormat:
 		return m.goToSourceFormatSelect(true)
+	case stateBatchSelectProfile:
+		return m.goToTargetFormatSelect(true)
 	case stateBatchBrowser:
 		if m.flowResizeOnly {
 			return m.goToResizeConfig(true)
 		}
-		return m.goToTargetFormatSelect(true)
+		return m.goToProfileSelect(true)
 	case stateResizeConfig:
 		return m.goToTargetFormatSelect(m.resizeIsBatchFlow)
 	case stateResizePresetSelect:
@@ -2841,6 +2920,7 @@ func (m interactiveModel) goToCategorySelect(isBatch bool, resizeOnly bool, isWa
 	m.trimActiveSegment = 0
 	m.trimValidationErr = ""
 	m.trimPreviewPlan = nil
+	m.clearSelectedProfile()
 	m.cursor = 0
 
 	m.categoryIndices = nil
@@ -2950,6 +3030,46 @@ func (m interactiveModel) goToTargetFormatSelect(isBatch bool) interactiveModel 
 	return m
 }
 
+func (m interactiveModel) goToProfileSelect(isBatch bool) interactiveModel {
+	items, err := profile.List()
+	if err != nil {
+		items = nil
+	}
+
+	m.profileChoices = items
+	m.choices = make([]string, 0, len(items)+1)
+	m.choiceIcons = make([]string, 0, len(items)+1)
+	m.choiceDescs = make([]string, 0, len(items)+1)
+	m.choices = append(m.choices, "Profil kullanma")
+	m.choiceIcons = append(m.choiceIcons, "⏭️")
+	m.choiceDescs = append(m.choiceDescs, "Varsayilan CLI/env/project ayarlariyla devam et")
+	m.cursor = 0
+
+	for i, item := range items {
+		label := item.Name
+		if item.Source != "" {
+			label = fmt.Sprintf("%s [%s]", item.Name, item.Source)
+		}
+		desc := item.Description
+		if strings.TrimSpace(desc) == "" {
+			desc = summarizeProfile(item)
+		}
+		m.choices = append(m.choices, label)
+		m.choiceIcons = append(m.choiceIcons, "🧩")
+		m.choiceDescs = append(m.choiceDescs, desc)
+		if m.profileActive && item.Name == m.selectedProfile {
+			m.cursor = i + 1
+		}
+	}
+
+	if isBatch {
+		m.state = stateBatchSelectProfile
+	} else {
+		m.state = stateSelectProfile
+	}
+	return m
+}
+
 func (m *interactiveModel) goToFileBrowser() interactiveModel {
 	m.state = stateFileBrowser
 	m.cursor = 0
@@ -3029,6 +3149,13 @@ func (m interactiveModel) doConvert() tea.Cmd {
 	tracker := m.progress
 	return func() tea.Msg {
 		start := time.Now()
+		effectiveQuality := m.effectiveQuality()
+		effectiveConflict := m.effectiveOnConflict()
+		effectiveResize, err := m.effectiveResizeSpec()
+		if err != nil {
+			return convertDoneMsg{err: err, duration: time.Since(start)}
+		}
+		effectiveMetadata := m.effectiveMetadataMode()
 
 		conv, err := converter.FindConverter(m.sourceFormat, m.targetFormat)
 		if err != nil {
@@ -3037,7 +3164,7 @@ func (m interactiveModel) doConvert() tea.Cmd {
 
 		// Çıktıyı varsayılan olarak Desktop'a kaydet
 		outputPath := converter.BuildOutputPath(m.selectedFile, m.defaultOutput, m.targetFormat, "")
-		resolvedOutput, skip, err := converter.ResolveOutputPathConflict(outputPath, m.defaultOnConflict)
+		resolvedOutput, skip, err := converter.ResolveOutputPathConflict(outputPath, effectiveConflict)
 		if err != nil {
 			return convertDoneMsg{err: err, duration: time.Since(start)}
 		}
@@ -3048,7 +3175,12 @@ func (m interactiveModel) doConvert() tea.Cmd {
 				output:   fmt.Sprintf("Atlandı (çakışma): %s", resolvedOutput),
 			}
 		}
-		opts := converter.Options{Quality: m.defaultQuality, Verbose: false, Resize: m.resizeSpec}
+		opts := converter.Options{
+			Quality:      effectiveQuality,
+			Verbose:      false,
+			Resize:       effectiveResize,
+			MetadataMode: effectiveMetadata,
+		}
 		if tracker != nil {
 			opts.Progress = tracker.Update
 		}
@@ -3073,6 +3205,16 @@ func (m interactiveModel) doBatchConvert() tea.Cmd {
 	tracker := m.progress
 	return func() tea.Msg {
 		start := time.Now()
+		effectiveQuality := m.effectiveQuality()
+		effectiveConflict := m.effectiveOnConflict()
+		effectiveRetry := m.effectiveRetry()
+		effectiveRetryDelay := m.effectiveRetryDelay()
+		effectiveReport := m.effectiveReport()
+		effectiveResize, err := m.effectiveResizeSpec()
+		if err != nil {
+			return batchDoneMsg{failed: 1, duration: time.Since(start)}
+		}
+		effectiveMetadata := m.effectiveMetadataMode()
 
 		var files []string
 		entries, _ := os.ReadDir(scanDir)
@@ -3091,7 +3233,7 @@ func (m interactiveModel) doBatchConvert() tea.Cmd {
 		jobs := make([]batch.Job, 0, len(files))
 		for _, f := range files {
 			baseOutput := converter.BuildOutputPath(f, m.defaultOutput, m.targetFormat, "")
-			resolvedOutput, skipReason, err := resolveBatchOutputPath(baseOutput, m.defaultOnConflict, reserved)
+			resolvedOutput, skipReason, err := resolveBatchOutputPath(baseOutput, effectiveConflict, reserved)
 			if err != nil {
 				failed++
 				continue
@@ -3103,15 +3245,16 @@ func (m interactiveModel) doBatchConvert() tea.Cmd {
 				To:         m.targetFormat,
 				SkipReason: skipReason,
 				Options: converter.Options{
-					Quality: m.defaultQuality,
-					Verbose: false,
-					Resize:  m.resizeSpec,
+					Quality:      effectiveQuality,
+					Verbose:      false,
+					Resize:       effectiveResize,
+					MetadataMode: effectiveMetadata,
 				},
 			})
 		}
 
 		pool := batch.NewPool(m.defaultWorkers)
-		pool.SetRetry(m.defaultRetry, m.defaultRetryDelay)
+		pool.SetRetry(effectiveRetry, effectiveRetryDelay)
 		if tracker != nil {
 			pool.OnProgress = func(completed, total int) {
 				percent := 0.0
@@ -3132,10 +3275,10 @@ func (m interactiveModel) doBatchConvert() tea.Cmd {
 		skipped = summary.Skipped
 		failed += summary.Failed
 
-		if m.defaultReport != batch.ReportOff {
-			reportText, err := batch.RenderReport(m.defaultReport, summary, results, start, time.Now())
+		if effectiveReport != batch.ReportOff {
+			reportText, err := batch.RenderReport(effectiveReport, summary, results, start, time.Now())
 			if err == nil && strings.TrimSpace(reportText) != "" {
-				reportPath := filepath.Join(m.defaultOutput, fmt.Sprintf("batch-report-%d.%s", time.Now().Unix(), m.defaultReport))
+				reportPath := filepath.Join(m.defaultOutput, fmt.Sprintf("batch-report-%d.%s", time.Now().Unix(), effectiveReport))
 				_ = writeBatchReport(reportPath, reportText)
 			}
 		}
@@ -3181,11 +3324,21 @@ func (m interactiveModel) doWatchCycle() tea.Cmd {
 			return watchCycleMsg{}
 		}
 
+		effectiveQuality := m.effectiveQuality()
+		effectiveConflict := m.effectiveOnConflict()
+		effectiveRetry := m.effectiveRetry()
+		effectiveRetryDelay := m.effectiveRetryDelay()
+		effectiveResize, err := m.effectiveResizeSpec()
+		if err != nil {
+			return watchCycleMsg{err: err}
+		}
+		effectiveMetadata := m.effectiveMetadataMode()
+
 		jobs := make([]batch.Job, 0, len(files))
 		reserved := make(map[string]struct{}, len(files))
 		for _, f := range files {
 			baseOutput := converter.BuildOutputPath(f, m.defaultOutput, m.targetFormat, "")
-			resolvedOutput, skipReason, err := resolveBatchOutputPath(baseOutput, m.defaultOnConflict, reserved)
+			resolvedOutput, skipReason, err := resolveBatchOutputPath(baseOutput, effectiveConflict, reserved)
 			if err != nil {
 				return watchCycleMsg{err: err}
 			}
@@ -3196,14 +3349,16 @@ func (m interactiveModel) doWatchCycle() tea.Cmd {
 				To:         m.targetFormat,
 				SkipReason: skipReason,
 				Options: converter.Options{
-					Quality: m.defaultQuality,
-					Verbose: false,
+					Quality:      effectiveQuality,
+					Verbose:      false,
+					Resize:       effectiveResize,
+					MetadataMode: effectiveMetadata,
 				},
 			})
 		}
 
 		pool := batch.NewPool(m.defaultWorkers)
-		pool.SetRetry(m.defaultRetry, m.defaultRetryDelay)
+		pool.SetRetry(effectiveRetry, effectiveRetryDelay)
 		results := pool.Execute(jobs)
 		summary := batch.GetSummary(results, 0)
 
@@ -3255,6 +3410,117 @@ func gradientText(text string, colors []lipgloss.Color) string {
 		result.WriteString(style.Render(string(r)))
 	}
 	return result.String()
+}
+
+func (m *interactiveModel) clearSelectedProfile() {
+	m.selectedProfile = ""
+	m.profileValue = profile.Definition{}
+	m.profileActive = false
+	m.profileChoices = nil
+}
+
+func (m *interactiveModel) applySelectedProfileChoice() {
+	if m.cursor <= 0 {
+		m.clearSelectedProfile()
+		return
+	}
+	idx := m.cursor - 1
+	if idx < 0 || idx >= len(m.profileChoices) {
+		m.clearSelectedProfile()
+		return
+	}
+	selected := m.profileChoices[idx]
+	m.selectedProfile = selected.Name
+	m.profileValue = selected
+	m.profileActive = true
+}
+
+func (m interactiveModel) effectiveQuality() int {
+	if m.profileActive && m.profileValue.Quality != nil {
+		return *m.profileValue.Quality
+	}
+	return m.defaultQuality
+}
+
+func (m interactiveModel) effectiveOnConflict() string {
+	if m.profileActive && strings.TrimSpace(m.profileValue.OnConflict) != "" {
+		if normalized := converter.NormalizeConflictPolicy(m.profileValue.OnConflict); normalized != "" {
+			return normalized
+		}
+	}
+	return m.defaultOnConflict
+}
+
+func (m interactiveModel) effectiveRetry() int {
+	if m.profileActive && m.profileValue.Retry != nil {
+		return *m.profileValue.Retry
+	}
+	return m.defaultRetry
+}
+
+func (m interactiveModel) effectiveRetryDelay() time.Duration {
+	if m.profileActive && m.profileValue.RetryDelay != nil {
+		return *m.profileValue.RetryDelay
+	}
+	return m.defaultRetryDelay
+}
+
+func (m interactiveModel) effectiveReport() string {
+	if m.profileActive && strings.TrimSpace(m.profileValue.Report) != "" {
+		if normalized := batch.NormalizeReportFormat(m.profileValue.Report); normalized != "" {
+			return normalized
+		}
+	}
+	return m.defaultReport
+}
+
+func (m interactiveModel) effectiveMetadataMode() string {
+	if m.profileActive && strings.TrimSpace(m.profileValue.MetadataMode) != "" {
+		if normalized := converter.NormalizeMetadataMode(m.profileValue.MetadataMode); normalized != "" {
+			return normalized
+		}
+	}
+	return converter.MetadataAuto
+}
+
+func (m interactiveModel) effectiveResizeSpec() (*converter.ResizeSpec, error) {
+	if m.resizeSpec != nil {
+		return m.resizeSpec, nil
+	}
+	if !m.profileActive {
+		return nil, nil
+	}
+	return resizeSpecFromProfile(m.profileValue)
+}
+
+func resizeSpecFromProfile(def profile.Definition) (*converter.ResizeSpec, error) {
+	if strings.TrimSpace(def.ResizePreset) == "" && def.Width == nil && def.Height == nil {
+		return nil, nil
+	}
+
+	width := 0.0
+	height := 0.0
+	if def.Width != nil {
+		width = *def.Width
+	}
+	if def.Height != nil {
+		height = *def.Height
+	}
+
+	unit := def.Unit
+	if strings.TrimSpace(unit) == "" {
+		unit = "px"
+	}
+	mode := def.ResizeMode
+	if strings.TrimSpace(mode) == "" {
+		mode = "pad"
+	}
+	dpi := 96.0
+	if def.DPI != nil {
+		dpi = *def.DPI
+	}
+
+	return converter.BuildResizeSpec(def.ResizePreset, width, height, unit, mode, dpi)
 }
 
 func sortedKeys(m map[string]bool) []string {
@@ -3789,8 +4055,12 @@ func (m interactiveModel) viewBatchBrowser() string {
 	b.WriteString(dimStyle.Render(fmt.Sprintf("  💾 Cikti: %s", shortenPath(m.defaultOutput))))
 	b.WriteString("\n")
 	b.WriteString(dimStyle.Render(fmt.Sprintf("  Ayar: quality=%d, conflict=%s, retry=%d (%s), report=%s",
-		m.defaultQuality, m.defaultOnConflict, m.defaultRetry, m.defaultRetryDelay, m.defaultReport)))
+		m.effectiveQuality(), m.effectiveOnConflict(), m.effectiveRetry(), m.effectiveRetryDelay(), m.effectiveReport())))
 	b.WriteString("\n")
+	if m.profileActive {
+		b.WriteString(dimStyle.Render(fmt.Sprintf("  Profil: %s", m.selectedProfile)))
+		b.WriteString("\n")
+	}
 	if m.flowIsWatch {
 		b.WriteString(dimStyle.Render(fmt.Sprintf("  Watch: interval=%s, settle=%s", m.watchInterval, m.watchSettle)))
 		b.WriteString("\n")
@@ -3822,8 +4092,12 @@ func (m interactiveModel) viewWatching() string {
 	b.WriteString(dimStyle.Render(fmt.Sprintf("  Interval: %s  •  Settle: %s", m.watchInterval, m.watchSettle)))
 	b.WriteString("\n")
 	b.WriteString(dimStyle.Render(fmt.Sprintf("  Ayar: quality=%d, conflict=%s, retry=%d (%s)",
-		m.defaultQuality, m.defaultOnConflict, m.defaultRetry, m.defaultRetryDelay)))
+		m.effectiveQuality(), m.effectiveOnConflict(), m.effectiveRetry(), m.effectiveRetryDelay())))
 	b.WriteString("\n\n")
+	if m.profileActive {
+		b.WriteString(dimStyle.Render(fmt.Sprintf("  Profil: %s", m.selectedProfile)))
+		b.WriteString("\n\n")
+	}
 
 	if m.watchLastStatus != "" {
 		b.WriteString(infoStyle.Render("  " + m.watchLastStatus))
