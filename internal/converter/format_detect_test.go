@@ -92,3 +92,17 @@ func TestDetectFormatDetectsHEICByMagic(t *testing.T) {
 		t.Fatalf("expected heic, got %s", got)
 	}
 }
+
+func TestDetectFormatDetectsSVGByContent(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "vector.bin")
+	content := `<?xml version="1.0" encoding="UTF-8"?><svg width="120" height="80" xmlns="http://www.w3.org/2000/svg"><rect width="120" height="80"/></svg>`
+	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+		t.Fatalf("write failed: %v", err)
+	}
+
+	got := DetectFormat(path)
+	if got != "svg" {
+		t.Fatalf("expected svg, got %s", got)
+	}
+}

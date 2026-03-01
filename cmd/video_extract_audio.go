@@ -89,8 +89,9 @@ var extractAudioCmd = &cobra.Command{
 
 		ui.PrintConversion(input, outputPath)
 		started := time.Now()
+		progress := newCLIFFmpegProgress("Ses çıkarılıyor")
 
-		if err := runExtractAudioFFmpeg(input, outputPath, targetFormat, extractAudioQuality, extractAudioCopy, metadataMode, verbose); err != nil {
+		if err := runExtractAudioFFmpeg(input, outputPath, targetFormat, extractAudioQuality, extractAudioCopy, metadataMode, verbose, progress); err != nil {
 			ui.PrintError(err.Error())
 			return err
 		}
@@ -172,7 +173,7 @@ func extractAudioCodecArgs(targetFormat string, quality int, copyMode bool) []st
 	}
 }
 
-func runExtractAudioFFmpeg(input string, output string, targetFormat string, quality int, copyMode bool, metadataMode string, verbose bool) error {
+func runExtractAudioFFmpeg(input string, output string, targetFormat string, quality int, copyMode bool, metadataMode string, verbose bool, progress func(converter.ProgressInfo)) error {
 	ffmpegPath, err := exec.LookPath("ffmpeg")
 	if err != nil {
 		return fmt.Errorf("ffmpeg bulunamadi")
@@ -188,7 +189,7 @@ func runExtractAudioFFmpeg(input string, output string, targetFormat string, qua
 	args = append(args, converter.MetadataFFmpegArgs(metadataMode)...)
 	args = append(args, "-y", output)
 
-	return runFFmpegCommand(ffmpegPath, args, "ses çıkarma ffmpeg hatasi")
+	return runFFmpegCommand(ffmpegPath, input, args, "ses çıkarma ffmpeg hatasi", progress)
 }
 
 // detectAudioStreamFormat FFprobe ile video dosyasındaki ses codec'ini algılar.

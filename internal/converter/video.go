@@ -115,12 +115,7 @@ func (v *VideoConverter) Convert(input string, output string, opts Options) erro
 	args = append(args, MetadataFFmpegArgs(opts.MetadataMode)...)
 	args = append(args, output)
 
-	cmd := exec.Command(ffmpegPath, args...)
-	if outputBytes, err := cmd.CombinedOutput(); err != nil {
-		return fmt.Errorf("FFmpeg hatası: %s\n%s", err.Error(), string(outputBytes))
-	}
-
-	return nil
+	return RunFFmpegWithProgress(ffmpegPath, input, args, opts, "FFmpeg hatası")
 }
 
 // getCodecArgs hedef format ve kaliteye göre FFmpeg parametrelerini döner.

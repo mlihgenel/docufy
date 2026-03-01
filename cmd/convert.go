@@ -195,6 +195,9 @@ var convertCmd = &cobra.Command{
 			}
 			opts.TargetSize = parsedSize
 		}
+		if !jsonOutput && strings.Contains(strings.ToLower(conv.Name()), "ffmpeg") {
+			opts.Progress = newCLIFFmpegProgress(progressLabelForConverter(conv.Name()))
+		}
 
 		if err := conv.Convert(inputFile, outputFile, opts); err != nil {
 			ui.PrintError(fmt.Sprintf("Dönüşüm başarısız: %s", err.Error()))

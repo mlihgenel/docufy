@@ -34,7 +34,7 @@ func (ic *ImageConverter) Name() string {
 }
 
 // imageFormats desteklenen görsel formatları
-var imageFormats = []string{"png", "jpg", "webp", "bmp", "gif", "tif", "ico", "heic", "heif"}
+var imageFormats = []string{"png", "jpg", "webp", "bmp", "gif", "tif", "ico", "svg", "heic", "heif"}
 
 // imageWriteFormats yazılabilir formatlar
 var imageWriteFormats = []string{"png", "jpg", "webp", "bmp", "gif", "tif", "ico"}
@@ -66,10 +66,18 @@ func (ic *ImageConverter) SupportedConversions() []ConversionPair {
 			}
 		}
 	}
+	pairs = append(pairs, ConversionPair{
+		From:        "svg",
+		To:          "pdf",
+		Description: "SVG → PDF",
+	})
 	return pairs
 }
 
 func (ic *ImageConverter) SupportsConversion(from, to string) bool {
+	if from == "svg" && to == "pdf" {
+		return true
+	}
 	fromOk := false
 	toOk := false
 	for _, f := range imageFormats {
@@ -114,6 +122,10 @@ func (ic *ImageConverter) Convert(input string, output string, opts Options) err
 	// TargetSize: binary search ile kalite yakınsama (sadece lossy formatlar)
 	if opts.TargetSize > 0 && to == "jpg" {
 		return ic.encodeToTargetSize(output, img, to, opts.TargetSize)
+	}
+
+	if from == "svg" && to == "pdf" {
+		return encodeImagePDF(output, img)
 	}
 
 	return ic.encodeImage(output, img, to, quality, opts.Optimize)
@@ -246,6 +258,8 @@ func (ic *ImageConverter) decodeImage(path string, format string) (image.Image, 
 		img, err = webp.Decode(f)
 	case "ico":
 		img, err = decodeICO(f)
+	case "svg":
+		img, err = decodeSVGFile(path)
 	case "heic", "heif":
 		img, err = decodeHEIFViaFFmpeg(path)
 	default:

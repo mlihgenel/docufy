@@ -40,6 +40,7 @@ func (m interactiveModel) goToExtractAudioBrowser() interactiveModel {
 }
 
 func (m interactiveModel) doExtractAudio() tea.Cmd {
+	tracker := m.progress
 	return func() tea.Msg {
 		started := time.Now()
 
@@ -88,7 +89,11 @@ func (m interactiveModel) doExtractAudio() tea.Cmd {
 			fmt.Sscanf(m.extractAudioQualityInput, "%d", &quality)
 		}
 
-		err = runExtractAudioFFmpeg(inputFile, resolvedOutput, targetFormat, quality, m.extractAudioCopyMode, converter.MetadataAuto, false)
+		var progress func(converter.ProgressInfo)
+		if tracker != nil {
+			progress = tracker.Update
+		}
+		err = runExtractAudioFFmpeg(inputFile, resolvedOutput, targetFormat, quality, m.extractAudioCopyMode, converter.MetadataAuto, false, progress)
 		return convertDoneMsg{
 			err:      err,
 			duration: time.Since(started),

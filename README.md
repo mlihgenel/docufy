@@ -45,9 +45,12 @@ File Converter CLI, dosya dönüştürme işlemlerini internet servislerine yük
 - Belge, görsel, ses ve video dönüşümleri.
 - Sabit görevlerde ses ve video manipülasyonu: videodan ses çıkarma (`extract-audio`), belirli anından kare yakalama (`snapshot`), videoları sıralı birleştirme (`merge`) ve ses dizeleme (`audio normalize`).
 - WebP encode desteği: tüm görsel formatlarından WebP'ye dönüşüm (pure Go, lossless VP8L).
+- HEIC/HEIF kaynak desteği: iPhone görsellerini PNG/JPG/WEBP/BMP/GIF/TIFF/ICO formatlarına dönüştürme.
+- SVG kaynak desteği: SVG dosyalarını raster görsellere ve PDF çıktısına dönüştürme.
 - Görsel optimizasyon: `--optimize` ile dosya boyutunu minimize etme, `--target-size 500kb` ile hedef boyuta yaklaşma.
 - Dosya bilgisi komutu: `info` ile format, çözünürlük, codec, süre, bitrate bilgisi (JSON çıktı desteği).
 - `mp4 -> gif` dahil video dönüşümü.
+- Uzun FFmpeg işlemlerinde gerçek zamanlı progress bar ve ETA gösterimi (CLI, TUI ve batch).
 - Video düzenleme (`video trim`): `clip` modunda aralık çıkarır, `remove` modunda aralığı silip kalan parçaları birleştirir.
 - Video trim preview/plan: CLI’de `--dry-run/--preview`; TUI’de çalıştırmadan önce plan onayı ekranı.
 - Video trim codec stratejisi: `--codec auto` (varsayılan) hedef formata göre uyumlu codec seçer.
@@ -178,6 +181,12 @@ fileconverter-cli convert belge.md --to pdf
 
 # Görsel
 fileconverter-cli convert fotograf.jpeg --to png
+
+# HEIC/HEIF görseli PNG'ye dönüştür
+fileconverter-cli convert IMG_1234.HEIC --to png
+
+# SVG dosyasını PDF'e dönüştür
+fileconverter-cli convert logo.svg --to pdf
 
 # Görseli WebP'ye dönüştür
 fileconverter-cli convert fotograf.png --to webp
@@ -477,8 +486,9 @@ fileconverter-cli formats
 - Ek: `csv -> xlsx`
 
 ### Görseller
-- Kaynak: `png`, `jpg/jpeg`, `webp`, `bmp`, `gif`, `tif/tiff`, `ico`
+- Kaynak: `png`, `jpg/jpeg`, `webp`, `bmp`, `gif`, `tif/tiff`, `ico`, `svg`, `heic`, `heif`
 - Hedef: `png`, `jpg/jpeg`, `webp`, `bmp`, `gif`, `tif/tiff`, `ico`
+- Ek: `svg -> pdf`
 
 ### Ses (FFmpeg)
 - `mp3`, `wav`, `ogg`, `flac`, `aac`, `m4a`, `wma`, `opus`, `webm`

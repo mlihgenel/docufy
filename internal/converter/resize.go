@@ -76,6 +76,7 @@ var resizableFormatSet = map[string]bool{
 	"gif":  true,
 	"tif":  true,
 	"ico":  true,
+	"svg":  true,
 	"heic": true,
 	"heif": true,
 	"mp4":  true,

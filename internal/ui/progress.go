@@ -81,18 +81,20 @@ func PrintDuration(d time.Duration) {
 
 // ProgressBar ilerleme çubuğu gösterir
 type ProgressBar struct {
-	Total   int
-	Current int
-	Width   int
-	Label   string
+	Total     int
+	Current   int
+	Width     int
+	Label     string
+	startedAt time.Time
 }
 
 // NewProgressBar yeni bir progress bar oluşturur
 func NewProgressBar(total int, label string) *ProgressBar {
 	return &ProgressBar{
-		Total: total,
-		Width: 40,
-		Label: label,
+		Total:     total,
+		Width:     40,
+		Label:     label,
+		startedAt: time.Now(),
 	}
 }
 
@@ -110,6 +112,13 @@ func (pb *ProgressBar) Update(current int) {
 		Green, bar, Reset,
 		Cyan, percentage, Reset,
 		current, pb.Total)
+
+	if current > 0 && current < pb.Total && !pb.startedAt.IsZero() {
+		elapsed := time.Since(pb.startedAt)
+		perItem := time.Duration(float64(elapsed) / float64(current))
+		eta := perItem * time.Duration(pb.Total-current)
+		fmt.Printf(" %sETA:%s %s", Dim, Reset, formatDuration(eta))
+	}
 
 	if current >= pb.Total {
 		fmt.Println() // Son satırda yeni satıra geç
@@ -229,7 +238,7 @@ func PrintFormatCategory(format string) string {
 	}
 	imageFormats := map[string]bool{
 		"png": true, "jpg": true, "webp": true, "bmp": true, "gif": true,
-		"tif": true, "ico": true, "heic": true, "heif": true,
+		"tif": true, "ico": true, "svg": true, "heic": true, "heif": true,
 	}
 	videoFormats := map[string]bool{
 		"mp4": true, "mov": true, "mkv": true, "avi": true, "webm": true,

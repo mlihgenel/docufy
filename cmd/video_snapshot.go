@@ -93,8 +93,9 @@ Zaman belirtme yöntemleri:
 		ui.PrintConversion(input, outputPath)
 		ui.PrintInfo(fmt.Sprintf("Zaman noktası: %s", formatTrimSecondsHuman(seekSeconds)))
 		started := time.Now()
+		progress := newCLIFFmpegProgress("Kare yakalanıyor")
 
-		if err := runSnapshotFFmpeg(input, outputPath, seekSeconds, targetFormat, snapshotQuality, verbose); err != nil {
+		if err := runSnapshotFFmpeg(input, outputPath, seekSeconds, targetFormat, snapshotQuality, verbose, progress); err != nil {
 			ui.PrintError(err.Error())
 			return err
 		}
@@ -205,7 +206,7 @@ func snapshotCodecArgs(targetFormat string, quality int) []string {
 	}
 }
 
-func runSnapshotFFmpeg(input string, output string, seekSeconds float64, targetFormat string, quality int, verbose bool) error {
+func runSnapshotFFmpeg(input string, output string, seekSeconds float64, targetFormat string, quality int, verbose bool, progress func(converter.ProgressInfo)) error {
 	ffmpegPath, err := exec.LookPath("ffmpeg")
 	if err != nil {
 		return fmt.Errorf("ffmpeg bulunamadi")
@@ -224,5 +225,5 @@ func runSnapshotFFmpeg(input string, output string, seekSeconds float64, targetF
 	args = append(args, snapshotCodecArgs(targetFormat, quality)...)
 	args = append(args, "-y", output)
 
-	return runFFmpegCommand(ffmpegPath, args, "snapshot ffmpeg hatasi")
+	return runFFmpegCommand(ffmpegPath, input, args, "snapshot ffmpeg hatasi", progress)
 }

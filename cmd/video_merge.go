@@ -99,11 +99,12 @@ Farklı codec'lerde otomatik re-encode yapılır.
 		}
 
 		started := time.Now()
+		progress := newCLIFFmpegProgress("Video birleştiriliyor")
 
 		if canConcatDemux {
-			err = runMergeConcatDemuxer(args, outputPath, metadataMode, verbose)
+			err = runMergeConcatDemuxer(args, outputPath, metadataMode, verbose, progress)
 		} else {
-			err = runMergeReencode(args, outputPath, targetFormat, mergeQuality, metadataMode, verbose)
+			err = runMergeReencode(args, outputPath, targetFormat, mergeQuality, metadataMode, verbose, progress)
 		}
 		if err != nil {
 			ui.PrintError(err.Error())
@@ -199,7 +200,7 @@ func writeConcatList(files []string, tempDir string) (string, error) {
 	return listPath, nil
 }
 
-func runMergeConcatDemuxer(inputs []string, output string, metadataMode string, verbose bool) error {
+func runMergeConcatDemuxer(inputs []string, output string, metadataMode string, verbose bool, progress func(converter.ProgressInfo)) error {
 	ffmpegPath, err := exec.LookPath("ffmpeg")
 	if err != nil {
 		return fmt.Errorf("ffmpeg bulunamadi")
@@ -225,10 +226,10 @@ func runMergeConcatDemuxer(inputs []string, output string, metadataMode string, 
 	args = append(args, converter.MetadataFFmpegArgs(metadataMode)...)
 	args = append(args, "-y", output)
 
-	return runFFmpegCommand(ffmpegPath, args, "video birleştirme (concat) ffmpeg hatasi")
+	return runFFmpegCommand(ffmpegPath, listPath, args, "video birleştirme (concat) ffmpeg hatasi", progress)
 }
 
-func runMergeReencode(inputs []string, output string, targetFormat string, quality int, metadataMode string, verbose bool) error {
+func runMergeReencode(inputs []string, output string, targetFormat string, quality int, metadataMode string, verbose bool, progress func(converter.ProgressInfo)) error {
 	ffmpegPath, err := exec.LookPath("ffmpeg")
 	if err != nil {
 		return fmt.Errorf("ffmpeg bulunamadi")
@@ -252,7 +253,7 @@ func runMergeReencode(inputs []string, output string, targetFormat string, quali
 		partArgs = append(partArgs, mergeReencodeCodecArgs(targetFormat, quality)...)
 		partArgs = append(partArgs, "-y", partPath)
 
-		if err := runFFmpegCommand(ffmpegPath, partArgs, "video birleştirme ara dönüşüm hatasi"); err != nil {
+		if err := runFFmpegCommand(ffmpegPath, input, partArgs, "video birleştirme ara dönüşüm hatasi", progress); err != nil {
 			return err
 		}
 		convertedParts = append(convertedParts, partPath)
@@ -273,7 +274,7 @@ func runMergeReencode(inputs []string, output string, targetFormat string, quali
 	args = append(args, converter.MetadataFFmpegArgs(metadataMode)...)
 	args = append(args, "-y", output)
 
-	return runFFmpegCommand(ffmpegPath, args, "video birleştirme (final concat) ffmpeg hatasi")
+	return runFFmpegCommand(ffmpegPath, listPath, args, "video birleştirme (final concat) ffmpeg hatasi", progress)
 }
 
 func mergeCRF(quality int) int {

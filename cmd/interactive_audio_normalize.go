@@ -48,6 +48,7 @@ func (m interactiveModel) goToAudioNormalizeBrowser() interactiveModel {
 }
 
 func (m interactiveModel) doAudioNormalize() tea.Cmd {
+	tracker := m.progress
 	return func() tea.Msg {
 		started := time.Now()
 
@@ -98,7 +99,11 @@ func (m interactiveModel) doAudioNormalize() tea.Cmd {
 		fmt.Sscanf(m.normalizeTPInput, "%f", &targetTP)
 		fmt.Sscanf(m.normalizeLRAInput, "%f", &targetLRA)
 
-		err = runAudioNormalizeFFmpeg(inputFile, resolvedOutput, targetFormat, targetLUFS, targetTP, targetLRA, converter.MetadataAuto, false)
+		var progress func(converter.ProgressInfo)
+		if tracker != nil {
+			progress = tracker.Update
+		}
+		err = runAudioNormalizeFFmpeg(inputFile, resolvedOutput, targetFormat, targetLUFS, targetTP, targetLRA, converter.MetadataAuto, false, progress)
 		return convertDoneMsg{
 			err:      err,
 			duration: time.Since(started),

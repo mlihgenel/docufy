@@ -264,6 +264,7 @@ func (m interactiveModel) buildVideoTrimExecution() (videoTrimExecution, error) 
 }
 
 func (m interactiveModel) doVideoTrim() tea.Cmd {
+	tracker := m.progress
 	return func() tea.Msg {
 		started := time.Now()
 		execution, err := m.buildVideoTrimExecution()
@@ -282,6 +283,11 @@ func (m interactiveModel) doVideoTrim() tea.Cmd {
 			return convertDoneMsg{err: err, duration: time.Since(started)}
 		}
 
+		var progress func(converter.ProgressInfo)
+		if tracker != nil {
+			progress = tracker.Update
+		}
+
 		if execution.Mode == trimModeRemove {
 			if len(execution.RemoveRanges) > 0 {
 				err = runTrimRemoveRangesFFmpeg(
@@ -293,6 +299,7 @@ func (m interactiveModel) doVideoTrim() tea.Cmd {
 					execution.Quality,
 					converter.MetadataAuto,
 					false,
+					progress,
 				)
 			} else {
 				err = runTrimRemoveFFmpeg(
@@ -306,6 +313,7 @@ func (m interactiveModel) doVideoTrim() tea.Cmd {
 					execution.Quality,
 					converter.MetadataAuto,
 					false,
+					progress,
 				)
 			}
 		} else {
@@ -320,6 +328,7 @@ func (m interactiveModel) doVideoTrim() tea.Cmd {
 				execution.Quality,
 				converter.MetadataAuto,
 				false,
+				progress,
 			)
 		}
 		return convertDoneMsg{

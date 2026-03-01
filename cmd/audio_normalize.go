@@ -103,8 +103,9 @@ göre ses seviyesini ayarlar.
 		ui.PrintConversion(input, outputPath)
 		ui.PrintInfo(fmt.Sprintf("Hedef: LUFS=%.1f, TP=%.1f, LRA=%.1f", lufs, tp, lra))
 		started := time.Now()
+		progress := newCLIFFmpegProgress("Ses normalize ediliyor")
 
-		if err := runAudioNormalizeFFmpeg(input, outputPath, targetFormat, lufs, tp, lra, metadataMode, verbose); err != nil {
+		if err := runAudioNormalizeFFmpeg(input, outputPath, targetFormat, lufs, tp, lra, metadataMode, verbose, progress); err != nil {
 			ui.PrintError(err.Error())
 			return err
 		}
@@ -158,7 +159,7 @@ func normalizeAudioCodecArgs(targetFormat string) []string {
 	}
 }
 
-func runAudioNormalizeFFmpeg(input string, output string, targetFormat string, lufs float64, tp float64, lra float64, metadataMode string, verbose bool) error {
+func runAudioNormalizeFFmpeg(input string, output string, targetFormat string, lufs float64, tp float64, lra float64, metadataMode string, verbose bool, progress func(converter.ProgressInfo)) error {
 	ffmpegPath, err := exec.LookPath("ffmpeg")
 	if err != nil {
 		return fmt.Errorf("ffmpeg bulunamadi")
@@ -176,5 +177,5 @@ func runAudioNormalizeFFmpeg(input string, output string, targetFormat string, l
 	args = append(args, converter.MetadataFFmpegArgs(metadataMode)...)
 	args = append(args, output)
 
-	return runFFmpegCommand(ffmpegPath, args, "ses normalize ffmpeg hatasi")
+	return runFFmpegCommand(ffmpegPath, input, args, "ses normalize ffmpeg hatasi", progress)
 }

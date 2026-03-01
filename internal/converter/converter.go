@@ -9,6 +9,7 @@ import (
 	"slices"
 	"strings"
 	"sync"
+	"time"
 )
 
 // Options dönüşüm seçeneklerini tutar
@@ -23,6 +24,19 @@ type Options struct {
 	Optimize bool
 	// TargetSize: hedef dosya boyutu (byte), 0 = sınırsız
 	TargetSize int64
+	// Progress: uzun süren işlemler için ilerleme callback'i
+	Progress func(ProgressInfo)
+}
+
+// ProgressInfo dönüşüm ilerleme bilgisini taşır.
+type ProgressInfo struct {
+	Percent      float64
+	Current      time.Duration
+	Total        time.Duration
+	ETA          time.Duration
+	Completed    int
+	TotalItems   int
+	CurrentLabel string
 }
 
 // Result dönüşüm sonucunu tutar
@@ -209,6 +223,9 @@ func detectFormatFromContent(path string) string {
 	if byMagic := detectFormatByMagic(header); byMagic != "" {
 		return byMagic
 	}
+	if bySVG := detectSVGByContent(header); bySVG != "" {
+		return bySVG
+	}
 	if byMIME := detectFormatByMIME(header); byMIME != "" {
 		return byMIME
 	}
@@ -313,6 +330,8 @@ func detectFormatByMIME(header []byte) string {
 		return "tif"
 	case "image/x-icon", "image/vnd.microsoft.icon":
 		return "ico"
+	case "image/svg+xml":
+		return "svg"
 	case "application/pdf":
 		return "pdf"
 	case "text/html; charset=utf-8":

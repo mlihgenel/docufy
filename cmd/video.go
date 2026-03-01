@@ -183,13 +183,14 @@ var videoTrimCmd = &cobra.Command{
 			ui.PrintInfo(codecNote)
 		}
 		started := time.Now()
+		progress := newCLIFFmpegProgress("Video işleniyor")
 		if mode == trimModeClip {
-			err = runTrimFFmpeg(input, outputPath, startValue, endValue, durationValue, targetFormat, codec, videoTrimQuality, metadataMode, verbose)
+			err = runTrimFFmpeg(input, outputPath, startValue, endValue, durationValue, targetFormat, codec, videoTrimQuality, metadataMode, verbose, progress)
 		} else {
 			if len(removeRanges) > 0 {
-				err = runTrimRemoveRangesFFmpeg(input, outputPath, removeRanges, targetFormat, codec, videoTrimQuality, metadataMode, verbose)
+				err = runTrimRemoveRangesFFmpeg(input, outputPath, removeRanges, targetFormat, codec, videoTrimQuality, metadataMode, verbose, progress)
 			} else {
-				err = runTrimRemoveFFmpeg(input, outputPath, startValue, endValue, durationValue, targetFormat, codec, videoTrimQuality, metadataMode, verbose)
+				err = runTrimRemoveFFmpeg(input, outputPath, startValue, endValue, durationValue, targetFormat, codec, videoTrimQuality, metadataMode, verbose, progress)
 			}
 		}
 		if err != nil {
@@ -446,7 +447,7 @@ func buildTrimOutputPath(input string, targetFormat string, customName string, e
 	return filepath.Join(filepath.Dir(input), base+"."+targetFormat)
 }
 
-func runTrimFFmpeg(input string, output string, start string, end string, duration string, targetFormat string, codec string, quality int, metadataMode string, verbose bool) error {
+func runTrimFFmpeg(input string, output string, start string, end string, duration string, targetFormat string, codec string, quality int, metadataMode string, verbose bool, progress func(converter.ProgressInfo)) error {
 	ffmpegPath, err := exec.LookPath("ffmpeg")
 	if err != nil {
 		return fmt.Errorf("ffmpeg bulunamadi")
@@ -509,18 +510,18 @@ func runTrimFFmpeg(input string, output string, start string, end string, durati
 	args = append(args, "-y")
 	args = append(args, output)
 
-	if err := runFFmpegCommand(ffmpegPath, args, "video trim ffmpeg hatasi"); err != nil {
+	if err := runFFmpegCommand(ffmpegPath, input, args, "video trim ffmpeg hatasi", progress); err != nil {
 		return err
 	}
 	return nil
 }
 
-func runTrimRemoveFFmpeg(input string, output string, start string, end string, duration string, targetFormat string, codec string, quality int, metadataMode string, verbose bool) error {
+func runTrimRemoveFFmpeg(input string, output string, start string, end string, duration string, targetFormat string, codec string, quality int, metadataMode string, verbose bool, progress func(converter.ProgressInfo)) error {
 	removeRanges, err := resolveRemoveRanges(start, end, duration, nil)
 	if err != nil {
 		return err
 	}
-	return runTrimRemoveRangesFFmpeg(input, output, removeRanges, targetFormat, codec, quality, metadataMode, verbose)
+	return runTrimRemoveRangesFFmpeg(input, output, removeRanges, targetFormat, codec, quality, metadataMode, verbose, progress)
 }
 
 type keepSegment struct {
@@ -803,7 +804,7 @@ func formatTrimSecondsHuman(value float64) string {
 	return fmt.Sprintf("%02d:%02d:%02d.%03d", hours, minutes, seconds, ms)
 }
 
-func runTrimRemoveRangesFFmpeg(input string, output string, ranges []trimRange, targetFormat string, codec string, quality int, metadataMode string, verbose bool) error {
+func runTrimRemoveRangesFFmpeg(input string, output string, ranges []trimRange, targetFormat string, codec string, quality int, metadataMode string, verbose bool, progress func(converter.ProgressInfo)) error {
 	ffmpegPath, err := exec.LookPath("ffmpeg")
 	if err != nil {
 		return fmt.Errorf("ffmpeg bulunamadi")
@@ -856,7 +857,7 @@ func runTrimRemoveRangesFFmpeg(input string, output string, ranges []trimRange, 
 			args = append(args, "-t", formatSecondsForFFmpeg(length))
 		}
 		args = append(args, "-c", "copy", "-y", partPath)
-		if err := runFFmpegCommand(ffmpegPath, args, "video remove ara parça üretilemedi"); err != nil {
+		if err := runFFmpegCommand(ffmpegPath, input, args, "video remove ara parça üretilemedi", progress); err != nil {
 			return err
 		}
 		if hasContent(partPath) {
@@ -876,7 +877,7 @@ func runTrimRemoveRangesFFmpeg(input string, output string, ranges []trimRange, 
 		singleArgs = append(singleArgs, trimCodecArgs(targetFormat, codec, quality)...)
 		singleArgs = append(singleArgs, converter.MetadataFFmpegArgs(metadataMode)...)
 		singleArgs = append(singleArgs, "-y", output)
-		return runFFmpegCommand(ffmpegPath, singleArgs, "video remove çıktı üretilemedi")
+		return runFFmpegCommand(ffmpegPath, input, singleArgs, "video remove çıktı üretilemedi", progress)
 	}
 
 	listPath := filepath.Join(tempDir, "concat.txt")
@@ -897,7 +898,7 @@ func runTrimRemoveRangesFFmpeg(input string, output string, ranges []trimRange, 
 	concatArgs = append(concatArgs, trimCodecArgs(targetFormat, codec, quality)...)
 	concatArgs = append(concatArgs, converter.MetadataFFmpegArgs(metadataMode)...)
 	concatArgs = append(concatArgs, "-y", output)
-	return runFFmpegCommand(ffmpegPath, concatArgs, "video remove birleştirme hatası")
+	return runFFmpegCommand(ffmpegPath, listPath, concatArgs, "video remove birleştirme hatası", progress)
 }
 
 func clampTrimRangesToDuration(ranges []trimRange, durationSec float64) ([]trimRange, error) {
@@ -1032,12 +1033,8 @@ func trimReencodeArgs(targetFormat string, quality int) []string {
 	}
 }
 
-func runFFmpegCommand(ffmpegPath string, args []string, prefix string) error {
-	cmd := exec.Command(ffmpegPath, args...)
-	if out, err := cmd.CombinedOutput(); err != nil {
-		return fmt.Errorf("%s: %s\n%s", prefix, err.Error(), string(out))
-	}
-	return nil
+func runFFmpegCommand(ffmpegPath string, input string, args []string, prefix string, progress func(converter.ProgressInfo)) error {
+	return converter.RunFFmpegWithProgress(ffmpegPath, input, args, converter.Options{Progress: progress}, prefix)
 }
 
 func formatSecondsForFFmpeg(value float64) string {

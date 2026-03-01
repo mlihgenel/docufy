@@ -119,7 +119,7 @@ type formatCategory struct {
 var categories = []formatCategory{
 	{Name: "Belgeler", Icon: "📄", Desc: "MD, HTML, PDF, DOCX, TXT, ODT, RTF, CSV", Formats: []string{"md", "html", "pdf", "docx", "txt", "odt", "rtf", "csv"}},
 	{Name: "Ses Dosyaları", Icon: "🎵", Desc: "MP3, WAV, OGG, FLAC, AAC, M4A, WMA, OPUS, WEBM", Formats: []string{"mp3", "wav", "ogg", "flac", "aac", "m4a", "wma", "opus", "webm"}},
-	{Name: "Görseller", Icon: "🖼️ ", Desc: "PNG, JPEG, WEBP, BMP, GIF, TIFF, ICO, HEIC, HEIF", Formats: []string{"png", "jpg", "webp", "bmp", "gif", "tif", "ico", "heic", "heif"}},
+	{Name: "Görseller", Icon: "🖼️ ", Desc: "PNG, JPEG, WEBP, BMP, GIF, TIFF, ICO, SVG, HEIC, HEIF", Formats: []string{"png", "jpg", "webp", "bmp", "gif", "tif", "ico", "svg", "heic", "heif"}},
 	{Name: "Video Dosyaları", Icon: "🎬", Desc: "MP4, MOV, MKV, AVI, WEBM, M4V, WMV, FLV (GIF'e dönüştürme dahil)", Formats: []string{"mp4", "mov", "mkv", "avi", "webm", "m4v", "wmv", "flv"}},
 }
 
@@ -377,6 +377,7 @@ type interactiveModel struct {
 	// Spinner
 	spinnerIdx  int
 	spinnerTick int
+	progress    *progressTracker
 
 	// Pencere
 	width  int
@@ -695,6 +696,7 @@ func (m interactiveModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case convertDoneMsg:
 		m.state = stateConvertDone
+		m.progress = nil
 		if msg.err != nil {
 			m.resultMsg = msg.err.Error()
 			m.resultErr = true
@@ -707,6 +709,7 @@ func (m interactiveModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case batchDoneMsg:
 		m.state = stateBatchDone
+		m.progress = nil
 		m.batchTotal = msg.total
 		m.batchSucceeded = msg.succeeded
 		m.batchSkipped = msg.skipped
@@ -1501,12 +1504,19 @@ func (m interactiveModel) viewConverting() string {
 		b.WriteString("\n\n")
 	}
 
+	progressInfo := converter.ProgressInfo{}
+	if m.progress != nil {
+		progressInfo = m.progress.Snapshot()
+	}
+
 	// Animated progress bar
 	barWidth := 40
-	// Simüle edilen ilerleme — tick bazlı (0-100 arası)
-	progress := m.spinnerTick * 3
-	if progress > 95 {
-		progress = 95 // Tamamlanana kadar %95'te bekle
+	progress := int(progressInfo.Percent)
+	if progress <= 0 {
+		progress = m.spinnerTick * 3
+		if progress > 95 {
+			progress = 95 // Tamamlanana kadar %95'te bekle
+		}
 	}
 
 	filled := barWidth * progress / 100
@@ -1551,7 +1561,23 @@ func (m interactiveModel) viewConverting() string {
 	b.WriteString("\n\n")
 
 	// Alt bilgi
-	b.WriteString(dimStyle.Render("  Islem devam ediyor, lütfen bekleyin..."))
+	if m.state == stateBatchConverting && progressInfo.TotalItems > 0 {
+		b.WriteString(dimStyle.Render(fmt.Sprintf("  Batch: %d/%d dosya", progressInfo.Completed, progressInfo.TotalItems)))
+		if progressInfo.ETA > 0 {
+			b.WriteString(dimStyle.Render(fmt.Sprintf("  •  ETA: %s", formatDuration(progressInfo.ETA))))
+		}
+	} else if progressInfo.Total > 0 {
+		b.WriteString(dimStyle.Render(fmt.Sprintf("  %s / %s", formatDuration(progressInfo.Current), formatDuration(progressInfo.Total))))
+		if progressInfo.ETA > 0 {
+			b.WriteString(dimStyle.Render(fmt.Sprintf("  •  ETA: %s", formatDuration(progressInfo.ETA))))
+		}
+	} else {
+		label := "Islem devam ediyor, lütfen bekleyin..."
+		if strings.TrimSpace(progressInfo.CurrentLabel) != "" {
+			label = progressInfo.CurrentLabel
+		}
+		b.WriteString(dimStyle.Render("  " + label))
+	}
 	b.WriteString("\n")
 
 	// Cursor blink (progress bar animasyonu için)
@@ -1633,7 +1659,7 @@ func (m interactiveModel) viewFormats() string {
 
 	docFormats := map[string]bool{"md": true, "html": true, "pdf": true, "docx": true, "txt": true, "odt": true, "rtf": true, "csv": true}
 	audioFormats := map[string]bool{"mp3": true, "wav": true, "ogg": true, "flac": true, "aac": true, "m4a": true, "wma": true, "opus": true, "webm": true}
-	imgFormats := map[string]bool{"png": true, "jpg": true, "webp": true, "bmp": true, "gif": true, "tif": true, "ico": true, "heic": true, "heif": true}
+	imgFormats := map[string]bool{"png": true, "jpg": true, "webp": true, "bmp": true, "gif": true, "tif": true, "ico": true, "svg": true, "heic": true, "heif": true}
 	videoFormats := map[string]bool{"mp4": true, "mov": true, "mkv": true, "avi": true, "webm": true, "m4v": true, "wmv": true, "flv": true, "gif": true}
 
 	ffmpegStatus := "Var"
@@ -1938,6 +1964,7 @@ func (m interactiveModel) handleEnter() (tea.Model, tea.Cmd) {
 					m.cursor = 0
 					return m, nil
 				}
+				m.progress = newProgressTracker()
 				m.state = stateConverting
 				return m, m.doConvert()
 			}
@@ -2197,6 +2224,7 @@ func (m interactiveModel) handleEnter() (tea.Model, tea.Cmd) {
 	case stateVideoTrimPreview:
 		if m.cursor == 0 {
 			m.trimValidationErr = ""
+			m.progress = newProgressTracker()
 			m.state = stateConverting
 			return m, m.doVideoTrim()
 		}
@@ -2238,6 +2266,7 @@ func (m interactiveModel) handleEnter() (tea.Model, tea.Cmd) {
 
 	case stateExtractAudioCopy:
 		m.extractAudioCopyMode = (m.cursor == 1)
+		m.progress = newProgressTracker()
 		m.state = stateConverting
 		return m, m.doExtractAudio()
 
@@ -2271,6 +2300,7 @@ func (m interactiveModel) handleEnter() (tea.Model, tea.Cmd) {
 		case 4:
 			m.snapshotQualityInput = "100"
 		}
+		m.progress = newProgressTracker()
 		m.state = stateConverting
 		return m, m.doSnapshot()
 
@@ -2306,6 +2336,7 @@ func (m interactiveModel) handleEnter() (tea.Model, tea.Cmd) {
 
 	case stateMergeReencode:
 		m.mergeReencodeMode = (m.cursor == 1)
+		m.progress = newProgressTracker()
 		m.state = stateConverting
 		return m, m.doMerge()
 
@@ -2361,6 +2392,7 @@ func (m interactiveModel) handleEnter() (tea.Model, tea.Cmd) {
 		case 2:
 			m.normalizeLRAInput = "15.0"
 		}
+		m.progress = newProgressTracker()
 		m.state = stateConverting
 		return m, m.doAudioNormalize()
 
@@ -2415,6 +2447,7 @@ func (m interactiveModel) handleEnter() (tea.Model, tea.Cmd) {
 			m.watchProcessing = true
 			return m, m.startWatch()
 		}
+		m.progress = newProgressTracker()
 		m.state = stateBatchConverting
 		return m, m.doBatchConvert()
 
@@ -2992,6 +3025,7 @@ func (m interactiveModel) isAllowedFileBrowserItem(name string) bool {
 }
 
 func (m interactiveModel) doConvert() tea.Cmd {
+	tracker := m.progress
 	return func() tea.Msg {
 		start := time.Now()
 
@@ -3014,6 +3048,9 @@ func (m interactiveModel) doConvert() tea.Cmd {
 			}
 		}
 		opts := converter.Options{Quality: m.defaultQuality, Verbose: false, Resize: m.resizeSpec}
+		if tracker != nil {
+			opts.Progress = tracker.Update
+		}
 
 		// Çıktı dizininin var olduğundan emin ol
 		os.MkdirAll(filepath.Dir(resolvedOutput), 0755)
@@ -3032,6 +3069,7 @@ func (m interactiveModel) doBatchConvert() tea.Cmd {
 	if scanDir == "" {
 		scanDir = m.defaultOutput
 	}
+	tracker := m.progress
 	return func() tea.Msg {
 		start := time.Now()
 
@@ -3073,6 +3111,20 @@ func (m interactiveModel) doBatchConvert() tea.Cmd {
 
 		pool := batch.NewPool(m.defaultWorkers)
 		pool.SetRetry(m.defaultRetry, m.defaultRetryDelay)
+		if tracker != nil {
+			pool.OnProgress = func(completed, total int) {
+				percent := 0.0
+				if total > 0 {
+					percent = float64(completed) / float64(total) * 100
+				}
+				tracker.Update(converter.ProgressInfo{
+					Percent:      percent,
+					Completed:    completed,
+					TotalItems:   total,
+					CurrentLabel: "Toplu dönüştürme",
+				})
+			}
+		}
 		results := pool.Execute(jobs)
 		summary := batch.GetSummary(results, time.Since(start))
 		succeeded = summary.Succeeded

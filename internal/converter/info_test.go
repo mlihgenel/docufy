@@ -50,6 +50,7 @@ func TestCategorizeFormat(t *testing.T) {
 		{"png", "image"},
 		{"jpg", "image"},
 		{"webp", "image"},
+		{"svg", "image"},
 		{"heic", "image"},
 		{"heif", "image"},
 		{"mp4", "video"},
@@ -89,6 +90,30 @@ func TestGetFileInfoJPEG(t *testing.T) {
 	}
 	if info.Width != 200 || info.Height != 150 {
 		t.Fatalf("expected 200x150, got %dx%d", info.Width, info.Height)
+	}
+}
+
+func TestGetFileInfoSVG(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "shape.svg")
+	content := `<?xml version="1.0" encoding="UTF-8"?><svg width="64" height="48" xmlns="http://www.w3.org/2000/svg"><rect width="64" height="48"/></svg>`
+	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+		t.Fatalf("write failed: %v", err)
+	}
+
+	info, err := GetFileInfo(path)
+	if err != nil {
+		t.Fatalf("GetFileInfo failed: %v", err)
+	}
+
+	if info.Format != "SVG" {
+		t.Fatalf("expected SVG format, got %s", info.Format)
+	}
+	if info.Category != "image" {
+		t.Fatalf("expected image category, got %s", info.Category)
+	}
+	if info.Width != 64 || info.Height != 48 {
+		t.Fatalf("expected 64x48, got %dx%d", info.Width, info.Height)
 	}
 }
 

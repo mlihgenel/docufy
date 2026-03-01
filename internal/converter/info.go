@@ -109,6 +109,16 @@ func GetFileInfo(path string) (FileInfo, error) {
 
 // fillImageInfo Go image.DecodeConfig ile görsel boyutlarını okur
 func fillImageInfo(info *FileInfo, path string) {
+	if DetectFormat(path) == "svg" {
+		width, height, err := svgDimensionsFromFile(path)
+		if err == nil {
+			info.Width = width
+			info.Height = height
+			info.Resolution = fmt.Sprintf("%dx%d", width, height)
+		}
+		return
+	}
+
 	f, err := os.Open(path)
 	if err != nil {
 		return

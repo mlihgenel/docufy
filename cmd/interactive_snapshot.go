@@ -39,6 +39,7 @@ func (m interactiveModel) goToSnapshotBrowser() interactiveModel {
 }
 
 func (m interactiveModel) doSnapshot() tea.Cmd {
+	tracker := m.progress
 	return func() tea.Msg {
 		started := time.Now()
 
@@ -92,7 +93,11 @@ func (m interactiveModel) doSnapshot() tea.Cmd {
 		if err != nil {
 			return convertDoneMsg{err: err, duration: time.Since(started)}
 		}
-		err = runSnapshotFFmpeg(inputFile, resolvedOutput, timeSec, targetFormat, quality, false)
+		var progress func(converter.ProgressInfo)
+		if tracker != nil {
+			progress = tracker.Update
+		}
+		err = runSnapshotFFmpeg(inputFile, resolvedOutput, timeSec, targetFormat, quality, false, progress)
 		return convertDoneMsg{
 			err:      err,
 			duration: time.Since(started),

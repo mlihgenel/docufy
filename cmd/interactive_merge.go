@@ -13,6 +13,7 @@ import (
 )
 
 func (m interactiveModel) doMerge() tea.Cmd {
+	tracker := m.progress
 	return func() tea.Msg {
 		started := time.Now()
 
@@ -60,11 +61,15 @@ func (m interactiveModel) doMerge() tea.Cmd {
 			fmt.Sscanf(m.mergeQualityInput, "%d", &quality)
 		}
 
+		var progress func(converter.ProgressInfo)
+		if tracker != nil {
+			progress = tracker.Update
+		}
 		canConcatDemux := !m.mergeReencodeMode && checkCodecConsistency(m.mergeFiles)
 		if canConcatDemux {
-			err = runMergeConcatDemuxer(m.mergeFiles, resolvedOutput, converter.MetadataAuto, false)
+			err = runMergeConcatDemuxer(m.mergeFiles, resolvedOutput, converter.MetadataAuto, false, progress)
 		} else {
-			err = runMergeReencode(m.mergeFiles, resolvedOutput, targetFormat, quality, converter.MetadataAuto, false)
+			err = runMergeReencode(m.mergeFiles, resolvedOutput, targetFormat, quality, converter.MetadataAuto, false, progress)
 		}
 		return convertDoneMsg{
 			err:      err,
