@@ -487,6 +487,31 @@ Kullanıcı profilleri:
 - Komutlar: `fileconverter-cli profiles list` ve `fileconverter-cli profiles create`
 - Aynı isimli kullanıcı profili, built-in profilin alanlarını override eder.
 
+Örnek kullanıcı profili:
+```toml
+description = "Story ciktilari icin hizli varsayilanlar"
+quality = 83
+on_conflict = "versioned"
+resize_preset = "story"
+resize_mode = "fit"
+metadata_mode = "strip"
+retry = 1
+retry_delay = "500ms"
+```
+
+Örnek dosya yolu:
+```text
+~/.fileconverter/profiles/story-fast.toml
+```
+
+Kullanım:
+```bash
+fileconverter-cli profiles list
+fileconverter-cli convert klip.mp4 --to mp4 --profile story-fast
+fileconverter-cli batch ./videolar --from mov --to mp4 --profile story-fast
+fileconverter-cli watch ./incoming --from mov --to mp4 --profile story-fast
+```
+
 ## Desteklenen Formatlar
 
 En güncel ve tam matris için:
