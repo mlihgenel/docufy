@@ -8,8 +8,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/mlihgenel/fileconverter-cli/internal/pipeline"
-	"github.com/mlihgenel/fileconverter-cli/internal/ui"
+	"github.com/mlihgenel/docufy/internal/pipeline"
+	"github.com/mlihgenel/docufy/internal/ui"
 )
 
 var (
@@ -35,8 +35,8 @@ var pipelineRunCmd = &cobra.Command{
 	Long: `JSON formatında tanımlanan pipeline akışını sırayla çalıştırır.
 
 Örnek:
-  fileconverter-cli pipeline run ./pipeline.json --profile social-story
-  fileconverter-cli pipeline run ./pipeline.json --strip-metadata --report json --report-file ./reports/pipeline.json`,
+  docufy pipeline run ./pipeline.json --profile social-story
+  docufy pipeline run ./pipeline.json --strip-metadata --report json --report-file ./reports/pipeline.json`,
 	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		specPath := args[0]

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mlihgenel/fileconverter-cli/internal/converter"
+	"github.com/mlihgenel/docufy/internal/converter"
 )
 
 // ExecuteConfig pipeline çalışma ayarlarını tutar.
@@ -64,7 +64,7 @@ func Execute(spec Spec, cfg ExecuteConfig) (Result, error) {
 		Steps:     make([]StepResult, 0, len(spec.Steps)),
 	}
 
-	tempDir, err := os.MkdirTemp("", "fileconverter-pipeline-*")
+	tempDir, err := os.MkdirTemp("", "docufy-pipeline-*")
 	if err != nil {
 		return Result{}, err
 	}

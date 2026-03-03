@@ -8,8 +8,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/mlihgenel/fileconverter-cli/internal/converter"
-	"github.com/mlihgenel/fileconverter-cli/internal/ui"
+	"github.com/mlihgenel/docufy/internal/converter"
+	"github.com/mlihgenel/docufy/internal/ui"
 )
 
 var (
@@ -36,17 +36,17 @@ var convertCmd = &cobra.Command{
 	Long: `Bir dosyayı belirtilen formata dönüştürür.
 
 Örnekler:
-  fileconverter-cli convert README.md --to pdf
-  fileconverter-cli convert belge.md --to html
-  fileconverter-cli convert muzik.mp3 --to wav --quality 80
-  fileconverter-cli convert resim.png --to jpg --quality 90 --output ./cikti/
-  fileconverter-cli convert video.mp4 --to gif --quality 80
-  fileconverter-cli convert dosya.pdf --to txt --name cikti_adi
-  fileconverter-cli convert foto.jpg --to png --preset square --resize-mode pad
-  fileconverter-cli convert klip.mp4 --to mp4 --preset story --resize-mode pad
-  fileconverter-cli convert foto.webp --to png --width 12 --height 18 --unit cm --dpi 300
-  fileconverter-cli convert klip.mp4 --to mp4 --profile social-story
-  fileconverter-cli convert klip.mov --to mp4 --strip-metadata`,
+  docufy convert README.md --to pdf
+  docufy convert belge.md --to html
+  docufy convert muzik.mp3 --to wav --quality 80
+  docufy convert resim.png --to jpg --quality 90 --output ./cikti/
+  docufy convert video.mp4 --to gif --quality 80
+  docufy convert dosya.pdf --to txt --name cikti_adi
+  docufy convert foto.jpg --to png --preset square --resize-mode pad
+  docufy convert klip.mp4 --to mp4 --preset story --resize-mode pad
+  docufy convert foto.webp --to png --width 12 --height 18 --unit cm --dpi 300
+  docufy convert klip.mp4 --to mp4 --profile social-story
+  docufy convert klip.mov --to mp4 --strip-metadata`,
 	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		inputFile := args[0]
@@ -133,7 +133,7 @@ var convertCmd = &cobra.Command{
 		conv, err := converter.FindConverter(fromFormat, targetFormat)
 		if err != nil {
 			ui.PrintError(err.Error())
-			ui.PrintInfo(fmt.Sprintf("Desteklenen dönüşümleri görmek için: fileconverter-cli formats --from %s", fromFormat))
+			ui.PrintInfo(fmt.Sprintf("Desteklenen dönüşümleri görmek için: docufy formats --from %s", fromFormat))
 			return err
 		}
 

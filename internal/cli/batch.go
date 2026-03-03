@@ -9,9 +9,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/mlihgenel/fileconverter-cli/internal/batch"
-	"github.com/mlihgenel/fileconverter-cli/internal/converter"
-	"github.com/mlihgenel/fileconverter-cli/internal/ui"
+	"github.com/mlihgenel/docufy/internal/batch"
+	"github.com/mlihgenel/docufy/internal/converter"
+	"github.com/mlihgenel/docufy/internal/ui"
 )
 
 var (
@@ -45,17 +45,17 @@ var batchCmd = &cobra.Command{
 Worker pool kullanarak paralel dönüşüm yapar.
 
 Örnekler:
-  fileconverter-cli batch ./belgeler --from md --to pdf
-  fileconverter-cli batch ./belgeler --from md --to pdf --recursive
-  fileconverter-cli batch ./muzikler --from mp3 --to wav --workers 8
-  fileconverter-cli batch ./videolar --from mp4 --to gif --quality 80
-  fileconverter-cli batch "*.png" --to jpg --quality 85
-  fileconverter-cli batch ./resimler --from png --to jpg --dry-run
-  fileconverter-cli batch ./belgeler --from md --to html --output ./cikti/
-  fileconverter-cli batch ./videolar --from mp4 --to mp4 --preset story --resize-mode pad
-  fileconverter-cli batch ./fotograflar --from webp --to png --width 10 --height 15 --unit cm --dpi 300
-  fileconverter-cli batch ./resimler --from jpg --to png --on-conflict versioned --retry 2 --report json --report-file ./reports/batch.json
-  fileconverter-cli batch ./videolar --from mov --to mp4 --profile archive-lossless --preserve-metadata`,
+  docufy batch ./belgeler --from md --to pdf
+  docufy batch ./belgeler --from md --to pdf --recursive
+  docufy batch ./muzikler --from mp3 --to wav --workers 8
+  docufy batch ./videolar --from mp4 --to gif --quality 80
+  docufy batch "*.png" --to jpg --quality 85
+  docufy batch ./resimler --from png --to jpg --dry-run
+  docufy batch ./belgeler --from md --to html --output ./cikti/
+  docufy batch ./videolar --from mp4 --to mp4 --preset story --resize-mode pad
+  docufy batch ./fotograflar --from webp --to png --width 10 --height 15 --unit cm --dpi 300
+  docufy batch ./resimler --from jpg --to png --on-conflict versioned --retry 2 --report json --report-file ./reports/batch.json
+  docufy batch ./videolar --from mov --to mp4 --profile archive-lossless --preserve-metadata`,
 	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		source := args[0]

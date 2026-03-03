@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	// converter kayıtları için side-effect import
-	_ "github.com/mlihgenel/fileconverter-cli/internal/converter"
+	_ "github.com/mlihgenel/docufy/internal/converter"
 )
 
 func TestExecuteConvertPipeline(t *testing.T) {

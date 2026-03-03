@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mlihgenel/fileconverter-cli/internal/pipeline"
+	"github.com/mlihgenel/docufy/internal/pipeline"
 )
 
 type batchResumePayload struct {

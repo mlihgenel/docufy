@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/mlihgenel/fileconverter-cli/internal/pipeline"
+	"github.com/mlihgenel/docufy/internal/pipeline"
 )
 
 func TestResolvePipelinePaths(t *testing.T) {

@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mlihgenel/fileconverter-cli/internal/profile"
+	"github.com/mlihgenel/docufy/internal/profile"
 )
 
 func TestGoToProfileSelectIncludesProfileChoices(t *testing.T) {

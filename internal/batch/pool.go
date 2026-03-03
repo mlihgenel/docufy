@@ -9,7 +9,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/mlihgenel/fileconverter-cli/internal/converter"
+	"github.com/mlihgenel/docufy/internal/converter"
 )
 
 // Job bir dönüşüm işini temsil eder

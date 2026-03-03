@@ -13,12 +13,12 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
-	"github.com/mlihgenel/fileconverter-cli/internal/batch"
-	"github.com/mlihgenel/fileconverter-cli/internal/config"
-	"github.com/mlihgenel/fileconverter-cli/internal/converter"
-	"github.com/mlihgenel/fileconverter-cli/internal/installer"
-	"github.com/mlihgenel/fileconverter-cli/internal/profile"
-	convwatch "github.com/mlihgenel/fileconverter-cli/internal/watch"
+	"github.com/mlihgenel/docufy/internal/batch"
+	"github.com/mlihgenel/docufy/internal/config"
+	"github.com/mlihgenel/docufy/internal/converter"
+	"github.com/mlihgenel/docufy/internal/installer"
+	"github.com/mlihgenel/docufy/internal/profile"
+	convwatch "github.com/mlihgenel/docufy/internal/watch"
 )
 
 // ========================================
@@ -578,13 +578,13 @@ func loadInteractiveDefaults() interactiveDefaults {
 		d.Workers = runtime.NumCPU()
 	}
 
-	if v, ok := readEnvInt(envQuality); ok && v >= 0 {
+	if v, ok := readEnvIntCompat(envQuality, legacyEnvQuality); ok && v >= 0 {
 		d.Quality = v
 	} else if activeProjectConfig != nil && activeProjectConfig.Quality > 0 {
 		d.Quality = activeProjectConfig.Quality
 	}
 
-	if v := strings.TrimSpace(os.Getenv(envConflict)); v != "" {
+	if v := readEnvStringCompat(envConflict, legacyEnvConflict); v != "" {
 		d.OnConflict = v
 	} else if activeProjectConfig != nil && strings.TrimSpace(activeProjectConfig.OnConflict) != "" {
 		d.OnConflict = activeProjectConfig.OnConflict
@@ -595,19 +595,19 @@ func loadInteractiveDefaults() interactiveDefaults {
 		d.OnConflict = converter.ConflictVersioned
 	}
 
-	if v, ok := readEnvInt(envRetry); ok && v >= 0 {
+	if v, ok := readEnvIntCompat(envRetry, legacyEnvRetry); ok && v >= 0 {
 		d.Retry = v
 	} else if activeProjectConfig != nil && activeProjectConfig.Retry > 0 {
 		d.Retry = activeProjectConfig.Retry
 	}
 
-	if v, ok := readEnvDuration(envRetryDelay); ok && v >= 0 {
+	if v, ok := readEnvDurationCompat(envRetryDelay, legacyEnvRetryDelay); ok && v >= 0 {
 		d.RetryDelay = v
 	} else if activeProjectConfig != nil && activeProjectConfig.RetryDelay > 0 {
 		d.RetryDelay = activeProjectConfig.RetryDelay
 	}
 
-	if v := strings.TrimSpace(os.Getenv(envReport)); v != "" {
+	if v := readEnvStringCompat(envReport, legacyEnvReport); v != "" {
 		d.Report = v
 	} else if activeProjectConfig != nil && strings.TrimSpace(activeProjectConfig.ReportFormat) != "" {
 		d.Report = activeProjectConfig.ReportFormat
@@ -618,7 +618,7 @@ func loadInteractiveDefaults() interactiveDefaults {
 		d.Report = batch.ReportOff
 	}
 
-	if v, ok := readEnvInt(envWorkers); ok && v > 0 {
+	if v, ok := readEnvIntCompat(envWorkers, legacyEnvWorkers); ok && v > 0 {
 		d.Workers = v
 	} else if activeProjectConfig != nil && activeProjectConfig.Workers > 0 {
 		d.Workers = activeProjectConfig.Workers
@@ -1234,7 +1234,7 @@ func (m interactiveModel) viewMainMenu() string {
 			dimStyle.Render("1) Dönüştürme → Tek Dosya Dönüştür") + "\n" +
 			dimStyle.Render("2) Dosyanı seç, hedef formatı belirle, Enter ile başlat") + "\n" +
 			dimStyle.Render("3) Video için: Video Araçları bölümünü kullan") + "\n" +
-			dimStyle.Render("4) CLI ile kullanım: fileconverter-cli --help"),
+			dimStyle.Render("4) CLI ile kullanım: docufy --help"),
 	))
 	b.WriteString("\n\n")
 	b.WriteString(dimStyle.Render("  ↑↓ Gezin  •  Enter Seç  •  q Çıkış"))
@@ -1286,7 +1286,7 @@ func (m interactiveModel) viewMainSectionMenu() string {
 	}
 
 	b.WriteString("\n")
-	b.WriteString(dimStyle.Render("  CLI yardımı: fileconverter-cli --help  •  fileconverter-cli help <komut>"))
+	b.WriteString(dimStyle.Render("  CLI yardımı: docufy --help  •  docufy help <komut>"))
 	b.WriteString("\n")
 	b.WriteString("\n")
 	b.WriteString(dimStyle.Render("  ↑↓ Gezin  •  Enter Seç  •  Esc Ana Menü"))

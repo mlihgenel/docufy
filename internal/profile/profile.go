@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mlihgenel/fileconverter-cli/internal/batch"
-	"github.com/mlihgenel/fileconverter-cli/internal/converter"
+	"github.com/mlihgenel/docufy/internal/batch"
+	"github.com/mlihgenel/docufy/internal/converter"
 )
 
 // Definition dönüşüm profili alanlarını tutar.
@@ -138,6 +138,14 @@ func UserProfileDir() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("home dizini bulunamadi: %w", err)
 	}
+	return filepath.Join(home, ".docufy", "profiles"), nil
+}
+
+func legacyUserProfileDir() (string, error) {
+	home, err := userHomeDir()
+	if err != nil {
+		return "", fmt.Errorf("home dizini bulunamadi: %w", err)
+	}
 	return filepath.Join(home, ".fileconverter", "profiles"), nil
 }
 
@@ -195,29 +203,35 @@ func mergedProfiles() (map[string]Definition, error) {
 }
 
 func loadUserProfiles() (map[string]Definition, error) {
-	dir, err := UserProfileDir()
-	if err != nil {
-		return nil, err
+	result := make(map[string]Definition)
+	dirs := make([]string, 0, 2)
+	if legacyDir, err := legacyUserProfileDir(); err == nil {
+		dirs = append(dirs, legacyDir)
 	}
-	entries, err := os.ReadDir(dir)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return map[string]Definition{}, nil
-		}
-		return nil, fmt.Errorf("profil dizini okunamadi: %w", err)
+	if dir, err := UserProfileDir(); err == nil {
+		dirs = append(dirs, dir)
 	}
 
-	result := make(map[string]Definition)
-	for _, entry := range entries {
-		if entry.IsDir() || strings.ToLower(filepath.Ext(entry.Name())) != ".toml" {
-			continue
-		}
-		path := filepath.Join(dir, entry.Name())
-		def, err := parseProfileFile(path)
+	for _, dir := range dirs {
+		entries, err := os.ReadDir(dir)
 		if err != nil {
-			return nil, err
+			if os.IsNotExist(err) {
+				continue
+			}
+			return nil, fmt.Errorf("profil dizini okunamadi: %w", err)
 		}
-		result[def.Name] = def
+
+		for _, entry := range entries {
+			if entry.IsDir() || strings.ToLower(filepath.Ext(entry.Name())) != ".toml" {
+				continue
+			}
+			path := filepath.Join(dir, entry.Name())
+			def, err := parseProfileFile(path)
+			if err != nil {
+				return nil, err
+			}
+			result[def.Name] = def
+		}
 	}
 	return result, nil
 }

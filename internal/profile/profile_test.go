@@ -33,7 +33,7 @@ func TestListMergesBuiltinAndUserProfiles(t *testing.T) {
 	restore := withUserHomeDir(tempHome)
 	defer restore()
 
-	profilesDir := filepath.Join(tempHome, ".fileconverter", "profiles")
+	profilesDir := filepath.Join(tempHome, ".docufy", "profiles")
 	if err := os.MkdirAll(profilesDir, 0755); err != nil {
 		t.Fatalf("MkdirAll failed: %v", err)
 	}
@@ -115,7 +115,7 @@ func TestSaveUserProfileWritesToml(t *testing.T) {
 		t.Fatalf("SaveUserProfile failed: %v", err)
 	}
 
-	if want := filepath.Join(tempHome, ".fileconverter", "profiles", "my-profile.toml"); path != want {
+	if want := filepath.Join(tempHome, ".docufy", "profiles", "my-profile.toml"); path != want {
 		t.Fatalf("unexpected path: got %q want %q", path, want)
 	}
 
@@ -151,5 +151,61 @@ func withUserHomeDir(home string) func() {
 	userHomeDir = func() (string, error) { return home, nil }
 	return func() {
 		userHomeDir = prev
+	}
+}
+
+func TestListFallsBackToLegacyProfiles(t *testing.T) {
+	tempHome := t.TempDir()
+	restore := withUserHomeDir(tempHome)
+	defer restore()
+
+	legacyDir := filepath.Join(tempHome, ".fileconverter", "profiles")
+	if err := os.MkdirAll(legacyDir, 0755); err != nil {
+		t.Fatalf("MkdirAll failed: %v", err)
+	}
+
+	if err := os.WriteFile(filepath.Join(legacyDir, "legacy-only.toml"), []byte("name = \"legacy-only\"\nquality = 55\n"), 0644); err != nil {
+		t.Fatalf("WriteFile failed: %v", err)
+	}
+
+	p, err := Resolve("legacy-only")
+	if err != nil {
+		t.Fatalf("Resolve failed: %v", err)
+	}
+	if p.Source != "user" {
+		t.Fatalf("expected legacy profile to load as user profile, got %q", p.Source)
+	}
+	if p.Quality == nil || *p.Quality != 55 {
+		t.Fatalf("expected quality 55, got %#v", p.Quality)
+	}
+}
+
+func TestDocufyProfilesOverrideLegacyProfiles(t *testing.T) {
+	tempHome := t.TempDir()
+	restore := withUserHomeDir(tempHome)
+	defer restore()
+
+	legacyDir := filepath.Join(tempHome, ".fileconverter", "profiles")
+	newDir := filepath.Join(tempHome, ".docufy", "profiles")
+	if err := os.MkdirAll(legacyDir, 0755); err != nil {
+		t.Fatalf("MkdirAll legacy failed: %v", err)
+	}
+	if err := os.MkdirAll(newDir, 0755); err != nil {
+		t.Fatalf("MkdirAll new failed: %v", err)
+	}
+
+	if err := os.WriteFile(filepath.Join(legacyDir, "social-story.toml"), []byte("name = \"social-story\"\nquality = 61\n"), 0644); err != nil {
+		t.Fatalf("WriteFile legacy failed: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(newDir, "social-story.toml"), []byte("name = \"social-story\"\nquality = 77\n"), 0644); err != nil {
+		t.Fatalf("WriteFile new failed: %v", err)
+	}
+
+	p, err := Resolve("social-story")
+	if err != nil {
+		t.Fatalf("Resolve failed: %v", err)
+	}
+	if p.Quality == nil || *p.Quality != 77 {
+		t.Fatalf("expected docufy profile to win with quality 77, got %#v", p.Quality)
 	}
 }

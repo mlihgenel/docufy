@@ -10,8 +10,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/mlihgenel/fileconverter-cli/internal/converter"
-	"github.com/mlihgenel/fileconverter-cli/internal/ui"
+	"github.com/mlihgenel/docufy/internal/converter"
+	"github.com/mlihgenel/docufy/internal/ui"
 )
 
 var (
@@ -38,10 +38,10 @@ FFmpeg loudnorm filtresi kullanarak hedef LUFS, True Peak ve LRA değerlerine
 göre ses seviyesini ayarlar.
 
 Örnekler:
-  fileconverter-cli audio normalize podcast.mp3
-  fileconverter-cli audio normalize song.wav --to mp3
-  fileconverter-cli audio normalize voice.ogg --target-lufs -16
-  fileconverter-cli audio normalize music.flac --target-lufs -14 --target-tp -1 --target-lra 9`,
+  docufy audio normalize podcast.mp3
+  docufy audio normalize song.wav --to mp3
+  docufy audio normalize voice.ogg --target-lufs -16
+  docufy audio normalize music.flac --target-lufs -14 --target-tp -1 --target-lra 9`,
 	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		input := args[0]

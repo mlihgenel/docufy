@@ -9,10 +9,10 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/mlihgenel/fileconverter-cli/internal/batch"
-	"github.com/mlihgenel/fileconverter-cli/internal/converter"
-	"github.com/mlihgenel/fileconverter-cli/internal/ui"
-	convwatch "github.com/mlihgenel/fileconverter-cli/internal/watch"
+	"github.com/mlihgenel/docufy/internal/batch"
+	"github.com/mlihgenel/docufy/internal/converter"
+	"github.com/mlihgenel/docufy/internal/ui"
+	convwatch "github.com/mlihgenel/docufy/internal/watch"
 )
 
 var (
@@ -37,10 +37,10 @@ var watchCmd = &cobra.Command{
 otomatik dönüştürür.
 
 Örnekler:
-  fileconverter-cli watch ./incoming --from webp --to jpg
-  fileconverter-cli watch ./videos --from mp4 --to gif --recursive --quality 80
-  fileconverter-cli watch ./inbox --from png --to jpg --on-conflict versioned
-  fileconverter-cli watch ./incoming --from mov --to mp4 --profile archive-lossless --preserve-metadata`,
+  docufy watch ./incoming --from webp --to jpg
+  docufy watch ./videos --from mp4 --to gif --recursive --quality 80
+  docufy watch ./inbox --from png --to jpg --on-conflict versioned
+  docufy watch ./incoming --from mov --to mp4 --profile archive-lossless --preserve-metadata`,
 	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		sourceDir := args[0]

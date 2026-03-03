@@ -1,4 +1,4 @@
-module github.com/mlihgenel/fileconverter-cli
+module github.com/mlihgenel/docufy
 
 go 1.25.0
 

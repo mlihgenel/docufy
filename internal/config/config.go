@@ -12,13 +12,28 @@ type AppConfig struct {
 	DefaultOutputDir  string `json:"default_output_dir,omitempty"`
 }
 
-// configDir yapılandırma dizinini döner (~/.fileconverter)
+const (
+	configDirName       = ".docufy"
+	legacyConfigDirName = ".fileconverter"
+)
+
+var userHomeDir = os.UserHomeDir
+
+// configDir yapılandırma dizinini döner (~/.docufy)
 func configDir() (string, error) {
-	home, err := os.UserHomeDir()
+	home, err := userHomeDir()
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(home, ".fileconverter"), nil
+	return filepath.Join(home, configDirName), nil
+}
+
+func legacyConfigDir() (string, error) {
+	home, err := userHomeDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(home, legacyConfigDirName), nil
 }
 
 // configPath yapılandırma dosya yolunu döner
@@ -30,25 +45,44 @@ func configPath() (string, error) {
 	return filepath.Join(dir, "config.json"), nil
 }
 
+func legacyConfigPath() (string, error) {
+	dir, err := legacyConfigDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(dir, "config.json"), nil
+}
+
+func configReadPaths() []string {
+	paths := make([]string, 0, 2)
+	if path, err := configPath(); err == nil {
+		paths = append(paths, path)
+	}
+	if path, err := legacyConfigPath(); err == nil {
+		paths = append(paths, path)
+	}
+	return paths
+}
+
 // LoadConfig yapılandırmayı dosyadan okur
 func LoadConfig() (*AppConfig, error) {
-	path, err := configPath()
-	if err != nil {
-		return &AppConfig{}, nil
-	}
+	for _, path := range configReadPaths() {
+		data, err := os.ReadFile(path)
+		if err != nil {
+			if os.IsNotExist(err) {
+				continue
+			}
+			return &AppConfig{}, nil
+		}
 
-	data, err := os.ReadFile(path)
-	if err != nil {
-		// Dosya yoksa varsayılan config döndür
-		return &AppConfig{}, nil
-	}
+		var cfg AppConfig
+		if err := json.Unmarshal(data, &cfg); err != nil {
+			return &AppConfig{}, nil
+		}
 
-	var cfg AppConfig
-	if err := json.Unmarshal(data, &cfg); err != nil {
-		return &AppConfig{}, nil
+		return &cfg, nil
 	}
-
-	return &cfg, nil
+	return &AppConfig{}, nil
 }
 
 // SaveConfig yapılandırmayı dosyaya kaydeder

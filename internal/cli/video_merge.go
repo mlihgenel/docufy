@@ -10,8 +10,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/mlihgenel/fileconverter-cli/internal/converter"
-	"github.com/mlihgenel/fileconverter-cli/internal/ui"
+	"github.com/mlihgenel/docufy/internal/converter"
+	"github.com/mlihgenel/docufy/internal/ui"
 )
 
 var (
@@ -33,10 +33,10 @@ Aynı codec'teki videolar hızlı concat demuxer ile birleştirilir.
 Farklı codec'lerde otomatik re-encode yapılır.
 
 Örnekler:
-  fileconverter-cli video merge part1.mp4 part2.mp4
-  fileconverter-cli video merge part1.mp4 part2.mp4 part3.mp4 --name full_video
-  fileconverter-cli video merge clip1.mov clip2.avi --to mp4
-  fileconverter-cli video merge part1.mp4 part2.mp4 --reencode --quality 80`,
+  docufy video merge part1.mp4 part2.mp4
+  docufy video merge part1.mp4 part2.mp4 part3.mp4 --name full_video
+  docufy video merge clip1.mov clip2.avi --to mp4
+  docufy video merge part1.mp4 part2.mp4 --reencode --quality 80`,
 	Args: cobra.MinimumNArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		for _, input := range args {
@@ -206,7 +206,7 @@ func runMergeConcatDemuxer(inputs []string, output string, metadataMode string, 
 		return fmt.Errorf("ffmpeg bulunamadi")
 	}
 
-	tempDir, err := os.MkdirTemp("", "fileconverter-merge-*")
+	tempDir, err := os.MkdirTemp("", "docufy-merge-*")
 	if err != nil {
 		return fmt.Errorf("geçici klasör oluşturulamadı: %w", err)
 	}
@@ -235,7 +235,7 @@ func runMergeReencode(inputs []string, output string, targetFormat string, quali
 		return fmt.Errorf("ffmpeg bulunamadi")
 	}
 
-	tempDir, err := os.MkdirTemp("", "fileconverter-merge-*")
+	tempDir, err := os.MkdirTemp("", "docufy-merge-*")
 	if err != nil {
 		return fmt.Errorf("geçici klasör oluşturulamadı: %w", err)
 	}

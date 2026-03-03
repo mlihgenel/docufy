@@ -3,7 +3,7 @@ package entrypoint
 import (
 	"strings"
 
-	"github.com/mlihgenel/fileconverter-cli/internal/cli"
+	"github.com/mlihgenel/docufy/internal/cli"
 )
 
 // Run uygulama giriş akışını ortaklaştırır; farklı main paketleri bunu çağırabilir.

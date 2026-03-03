@@ -2,9 +2,11 @@ package converter
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"math"
+	"os"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -121,7 +123,13 @@ func scanFFmpegProgress(r io.Reader, total time.Duration, cb func(ProgressInfo))
 		}
 	}
 
-	return scanner.Err()
+	if err := scanner.Err(); err != nil {
+		if errors.Is(err, os.ErrClosed) || strings.Contains(strings.ToLower(err.Error()), "file already closed") {
+			return nil
+		}
+		return err
+	}
+	return nil
 }
 
 func buildFFmpegProgressInfo(current time.Duration, total time.Duration, label string) ProgressInfo {

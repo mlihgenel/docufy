@@ -10,8 +10,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/mlihgenel/fileconverter-cli/internal/converter"
-	"github.com/mlihgenel/fileconverter-cli/internal/ui"
+	"github.com/mlihgenel/docufy/internal/converter"
+	"github.com/mlihgenel/docufy/internal/ui"
 )
 
 var (
@@ -33,11 +33,11 @@ var extractAudioCmd = &cobra.Command{
 	Long: `Video dosyasından ses kanalını ayrı bir ses dosyası olarak çıkarır.
 
 Örnekler:
-  fileconverter-cli video extract-audio video.mp4
-  fileconverter-cli video extract-audio video.mp4 --to wav
-  fileconverter-cli video extract-audio video.mp4 --copy
-  fileconverter-cli video extract-audio video.mp4 --to flac --name soundtrack
-  fileconverter-cli video extract-audio video.mp4 --quality 90 --on-conflict overwrite`,
+  docufy video extract-audio video.mp4
+  docufy video extract-audio video.mp4 --to wav
+  docufy video extract-audio video.mp4 --copy
+  docufy video extract-audio video.mp4 --to flac --name soundtrack
+  docufy video extract-audio video.mp4 --quality 90 --on-conflict overwrite`,
 	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		input := args[0]

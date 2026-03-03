@@ -8,8 +8,8 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
 
-	"github.com/mlihgenel/fileconverter-cli/internal/converter"
-	"github.com/mlihgenel/fileconverter-cli/internal/ui"
+	"github.com/mlihgenel/docufy/internal/converter"
+	"github.com/mlihgenel/docufy/internal/ui"
 )
 
 var infoCmd = &cobra.Command{
@@ -18,11 +18,11 @@ var infoCmd = &cobra.Command{
 	Long: `Bir dosyanın format, boyut, çözünürlük, codec ve metadata bilgilerini gösterir.
 
 Örnekler:
-  fileconverter-cli info foto.jpg
-  fileconverter-cli info video.mp4
-  fileconverter-cli info ses.mp3
-  fileconverter-cli info belge.pdf
-  fileconverter-cli info foto.jpg --output-format json`,
+  docufy info foto.jpg
+  docufy info video.mp4
+  docufy info ses.mp3
+  docufy info belge.pdf
+  docufy info foto.jpg --output-format json`,
 	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		filePath := args[0]

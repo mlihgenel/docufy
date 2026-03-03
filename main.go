@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/mlihgenel/fileconverter-cli/internal/entrypoint"
+	"github.com/mlihgenel/docufy/internal/entrypoint"
 )
 
 var (

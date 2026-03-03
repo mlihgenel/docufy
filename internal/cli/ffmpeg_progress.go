@@ -3,8 +3,8 @@ package cli
 import (
 	"strings"
 
-	"github.com/mlihgenel/fileconverter-cli/internal/converter"
-	"github.com/mlihgenel/fileconverter-cli/internal/ui"
+	"github.com/mlihgenel/docufy/internal/converter"
+	"github.com/mlihgenel/docufy/internal/ui"
 )
 
 func newCLIFFmpegProgress(label string) func(converter.ProgressInfo) {

@@ -11,7 +11,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
-	"github.com/mlihgenel/fileconverter-cli/internal/converter"
+	"github.com/mlihgenel/docufy/internal/converter"
 )
 
 var videoTrimInputFormats = []string{"mp4", "mov", "mkv", "avi", "webm", "m4v", "wmv", "flv"}

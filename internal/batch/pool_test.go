@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mlihgenel/fileconverter-cli/internal/converter"
+	"github.com/mlihgenel/docufy/internal/converter"
 )
 
 type flakyConverter struct {

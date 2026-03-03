@@ -11,7 +11,10 @@ import (
 	"time"
 )
 
-const projectConfigFileName = ".fileconverter.toml"
+const (
+	projectConfigFileName       = ".docufy.toml"
+	legacyProjectConfigFileName = ".fileconverter.toml"
+)
 
 // ProjectConfig proje bazlı CLI varsayılanlarını tutar.
 type ProjectConfig struct {
@@ -26,7 +29,7 @@ type ProjectConfig struct {
 	ReportFormat  string
 }
 
-// LoadProjectConfig currentDir'den yukarı doğru .fileconverter.toml arar.
+// LoadProjectConfig currentDir'den yukarı doğru önce .docufy.toml sonra .fileconverter.toml arar.
 // Dosya yoksa (nil, "", nil) döner.
 func LoadProjectConfig(currentDir string) (*ProjectConfig, string, error) {
 	path, err := findProjectConfigPath(currentDir)
@@ -55,13 +58,15 @@ func findProjectConfigPath(startDir string) (string, error) {
 	}
 
 	for {
-		candidate := filepath.Join(dir, projectConfigFileName)
-		info, statErr := os.Stat(candidate)
-		if statErr == nil && !info.IsDir() {
-			return candidate, nil
-		}
-		if statErr != nil && !errors.Is(statErr, os.ErrNotExist) {
-			return "", statErr
+		for _, name := range []string{projectConfigFileName, legacyProjectConfigFileName} {
+			candidate := filepath.Join(dir, name)
+			info, statErr := os.Stat(candidate)
+			if statErr == nil && !info.IsDir() {
+				return candidate, nil
+			}
+			if statErr != nil && !errors.Is(statErr, os.ErrNotExist) {
+				return "", statErr
+			}
 		}
 
 		parent := filepath.Dir(dir)

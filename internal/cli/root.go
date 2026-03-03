@@ -7,11 +7,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mlihgenel/fileconverter-cli/internal/config"
+	"github.com/mlihgenel/docufy/internal/config"
 	"github.com/spf13/cobra"
 
 	// Converter modüllerini kaydet
-	_ "github.com/mlihgenel/fileconverter-cli/internal/converter"
+	_ "github.com/mlihgenel/docufy/internal/converter"
 )
 
 var (
@@ -42,23 +42,23 @@ func SetVersionInfo(version, date string) {
 
 func versionTemplate() string {
 	return fmt.Sprintf(
-		"FileConverter CLI v%s\nTarih:  %s\nGo:     %s\nOS:     %s/%s\n",
+		"Docufy v%s\nTarih:  %s\nGo:     %s\nOS:     %s/%s\n",
 		appVersion, appDate, runtime.Version(), runtime.GOOS, runtime.GOARCH,
 	)
 }
 
 var rootCmd = &cobra.Command{
-	Use:   "fileconverter-cli",
-	Short: "File Converter CLI - yerel dosya format donusturucu",
-	Long: `File Converter CLI — Dosyalarınızı yerel ortamda güvenli bir şekilde dönüştürün.
+	Use:   "docufy",
+	Short: "Docufy - yerel dosya format donusturucu",
+	Long: `Docufy — Dosyalarınızı yerel ortamda güvenli bir şekilde dönüştürün.
 
 Belge, ses, görsel ve video dosyalarını internet'e yüklemeden, tamamen yerel
 olarak farklı formatlara dönüştürmenizi sağlar.
 
 Kullanim:
-  fileconverter-cli                  # Interaktif TUI (bolum bazli menu)
-  fileconverter-cli --help           # Tum komutlari goster
-  fileconverter-cli help <komut>     # Belirli komut yardimi
+  docufy                  # Interaktif TUI (bolum bazli menu)
+  docufy --help           # Tum komutlari goster
+  docufy help <komut>     # Belirli komut yardimi
 
 Desteklenen kategoriler:
   Belgeler:  MD, HTML, PDF, DOCX, TXT, ODT, RTF, CSV (+ CSV -> XLSX)
@@ -67,25 +67,25 @@ Desteklenen kategoriler:
   Videolar:  MP4, MOV, MKV, AVI, WEBM, M4V, WMV, FLV, GIF  (FFmpeg gerekir)
 
 Örnekler:
-  fileconverter-cli convert dosya.md --to pdf
-  fileconverter-cli convert muzik.mp3 --to wav
-  fileconverter-cli convert resim.png --to jpg --quality 90
-  fileconverter-cli convert klip.mp4 --to mp4 --preset story --resize-mode pad
-  fileconverter-cli convert klip.mp4 --to mp4 --profile social-story --strip-metadata
-  fileconverter-cli convert klip.mp4 --to gif --quality 80
-  fileconverter-cli batch ./belgeler --from md --to pdf
-  fileconverter-cli batch ./resimler --from webp --to jpg --profile archive-lossless --preserve-metadata
-  fileconverter-cli batch ./resimler --from jpg --to png --on-conflict versioned --retry 2 --report json
-  fileconverter-cli watch ./incoming --from webp --to jpg
-  fileconverter-cli pipeline run ./pipeline.json --profile social-story
-  fileconverter-cli video trim input.mp4 --start 00:00:05 --duration 10
-  fileconverter-cli video trim input.mp4 --mode remove --start 00:00:23 --duration 2
-  fileconverter-cli video trim input.mp4 --mode remove --ranges "00:00:05-00:00:08,00:00:20-00:00:25"
-  fileconverter-cli video trim input.mp4 --mode remove --ranges "5-8,20-25" --dry-run
-  fileconverter-cli help video
-  fileconverter-cli help formats
-  fileconverter-cli resize-presets
-  fileconverter-cli formats`,
+  docufy convert dosya.md --to pdf
+  docufy convert muzik.mp3 --to wav
+  docufy convert resim.png --to jpg --quality 90
+  docufy convert klip.mp4 --to mp4 --preset story --resize-mode pad
+  docufy convert klip.mp4 --to mp4 --profile social-story --strip-metadata
+  docufy convert klip.mp4 --to gif --quality 80
+  docufy batch ./belgeler --from md --to pdf
+  docufy batch ./resimler --from webp --to jpg --profile archive-lossless --preserve-metadata
+  docufy batch ./resimler --from jpg --to png --on-conflict versioned --retry 2 --report json
+  docufy watch ./incoming --from webp --to jpg
+  docufy pipeline run ./pipeline.json --profile social-story
+  docufy video trim input.mp4 --start 00:00:05 --duration 10
+  docufy video trim input.mp4 --mode remove --start 00:00:23 --duration 2
+  docufy video trim input.mp4 --mode remove --ranges "00:00:05-00:00:08,00:00:20-00:00:25"
+  docufy video trim input.mp4 --mode remove --ranges "5-8,20-25" --dry-run
+  docufy help video
+  docufy help formats
+  docufy resize-presets
+  docufy formats`,
 	Version: appVersion,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		wd, err := os.Getwd()

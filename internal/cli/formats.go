@@ -7,8 +7,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/mlihgenel/fileconverter-cli/internal/converter"
-	"github.com/mlihgenel/fileconverter-cli/internal/ui"
+	"github.com/mlihgenel/docufy/internal/converter"
+	"github.com/mlihgenel/docufy/internal/ui"
 )
 
 var (
@@ -29,9 +29,9 @@ var formatsCmd = &cobra.Command{
 	Long: `Tüm desteklenen dosya formatlarını ve aralarındaki dönüşüm yollarını gösterir.
 
 Örnekler:
-  fileconverter-cli formats
-  fileconverter-cli formats --from pdf
-  fileconverter-cli formats --to docx`,
+  docufy formats
+  docufy formats --from pdf
+  docufy formats --to docx`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if formatsFrom != "" {
 			return showConversionsFrom(formatsFrom)

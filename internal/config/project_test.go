@@ -85,3 +85,48 @@ func TestLoadProjectConfigInvalidValue(t *testing.T) {
 		t.Fatalf("expected error for invalid quality")
 	}
 }
+
+func TestLoadProjectConfigFallsBackToLegacyFile(t *testing.T) {
+	root := t.TempDir()
+	legacyPath := filepath.Join(root, legacyProjectConfigFileName)
+	if err := os.WriteFile(legacyPath, []byte(`workers = 7`), 0644); err != nil {
+		t.Fatalf("write failed: %v", err)
+	}
+
+	cfg, foundPath, err := LoadProjectConfig(root)
+	if err != nil {
+		t.Fatalf("LoadProjectConfig failed: %v", err)
+	}
+	if cfg == nil {
+		t.Fatalf("expected config, got nil")
+	}
+	if foundPath != legacyPath {
+		t.Fatalf("expected legacy path, got %s", foundPath)
+	}
+	if cfg.Workers != 7 {
+		t.Fatalf("unexpected workers: %d", cfg.Workers)
+	}
+}
+
+func TestLoadProjectConfigPrefersDocufyFile(t *testing.T) {
+	root := t.TempDir()
+	newPath := filepath.Join(root, projectConfigFileName)
+	legacyPath := filepath.Join(root, legacyProjectConfigFileName)
+	if err := os.WriteFile(newPath, []byte(`workers = 9`), 0644); err != nil {
+		t.Fatalf("write new failed: %v", err)
+	}
+	if err := os.WriteFile(legacyPath, []byte(`workers = 3`), 0644); err != nil {
+		t.Fatalf("write legacy failed: %v", err)
+	}
+
+	cfg, foundPath, err := LoadProjectConfig(root)
+	if err != nil {
+		t.Fatalf("LoadProjectConfig failed: %v", err)
+	}
+	if foundPath != newPath {
+		t.Fatalf("expected new path, got %s", foundPath)
+	}
+	if cfg.Workers != 9 {
+		t.Fatalf("expected docufy config to win, got %d", cfg.Workers)
+	}
+}

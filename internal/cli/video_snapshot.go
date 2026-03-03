@@ -11,8 +11,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/mlihgenel/fileconverter-cli/internal/converter"
-	"github.com/mlihgenel/fileconverter-cli/internal/ui"
+	"github.com/mlihgenel/docufy/internal/converter"
+	"github.com/mlihgenel/docufy/internal/ui"
 )
 
 var (
@@ -37,10 +37,10 @@ Zaman belirtme yöntemleri:
   - Yüzde: --at %50 (videonun ortasından)
 
 Örnekler:
-  fileconverter-cli video snapshot video.mp4 --at 10
-  fileconverter-cli video snapshot video.mp4 --at 00:01:30 --to jpg
-  fileconverter-cli video snapshot video.mp4 --at %50 --name thumbnail
-  fileconverter-cli video snapshot video.mp4 --at 5.5 --to webp --quality 90`,
+  docufy video snapshot video.mp4 --at 10
+  docufy video snapshot video.mp4 --at 00:01:30 --to jpg
+  docufy video snapshot video.mp4 --at %50 --name thumbnail
+  docufy video snapshot video.mp4 --at 5.5 --to webp --quality 90`,
 	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		input := args[0]

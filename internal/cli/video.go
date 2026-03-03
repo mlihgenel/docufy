@@ -12,8 +12,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/mlihgenel/fileconverter-cli/internal/converter"
-	"github.com/mlihgenel/fileconverter-cli/internal/ui"
+	"github.com/mlihgenel/docufy/internal/converter"
+	"github.com/mlihgenel/docufy/internal/ui"
 )
 
 var (
@@ -63,12 +63,12 @@ var videoTrimCmd = &cobra.Command{
   - remove: belirtilen aralığı siler, kalan bölümleri birleştirip yeni dosya üretir
 
 Örnekler:
-  fileconverter-cli video trim input.mp4 --start 00:00:05 --duration 00:00:10
-  fileconverter-cli video trim input.mp4 --mode remove --start 00:00:23 --duration 2
-  fileconverter-cli video trim input.mp4 --mode remove --ranges "00:00:05-00:00:08,00:00:20-00:00:25"
-  fileconverter-cli video trim input.mp4 --mode remove --ranges "5-8,20-25" --dry-run
-  fileconverter-cli video trim input.mp4 --start 00:01:00 --end 00:01:30 --codec reencode
-  fileconverter-cli video trim input.mov --duration 15 --to mp4 --on-conflict versioned`,
+  docufy video trim input.mp4 --start 00:00:05 --duration 00:00:10
+  docufy video trim input.mp4 --mode remove --start 00:00:23 --duration 2
+  docufy video trim input.mp4 --mode remove --ranges "00:00:05-00:00:08,00:00:20-00:00:25"
+  docufy video trim input.mp4 --mode remove --ranges "5-8,20-25" --dry-run
+  docufy video trim input.mp4 --start 00:01:00 --end 00:01:30 --codec reencode
+  docufy video trim input.mov --duration 15 --to mp4 --on-conflict versioned`,
 	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		input := args[0]
@@ -830,7 +830,7 @@ func runTrimRemoveRangesFFmpeg(input string, output string, ranges []trimRange, 
 		return fmt.Errorf("silinecek aralık tüm videoyu kapsıyor")
 	}
 
-	tempDir, err := os.MkdirTemp("", "fileconverter-video-remove-*")
+	tempDir, err := os.MkdirTemp("", "docufy-video-remove-*")
 	if err != nil {
 		return fmt.Errorf("geçici klasör oluşturulamadı: %w", err)
 	}
