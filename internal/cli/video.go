@@ -12,8 +12,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/mlihgenel/docufy/internal/converter"
-	"github.com/mlihgenel/docufy/internal/ui"
+	"github.com/mlihgenel/docufy/v2/internal/converter"
+	"github.com/mlihgenel/docufy/v2/internal/ui"
 )
 
 var (

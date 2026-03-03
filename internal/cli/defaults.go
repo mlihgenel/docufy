@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mlihgenel/docufy/internal/converter"
+	"github.com/mlihgenel/docufy/v2/internal/converter"
 	"github.com/spf13/cobra"
 )
 

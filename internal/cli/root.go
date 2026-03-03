@@ -7,11 +7,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mlihgenel/docufy/internal/config"
+	"github.com/mlihgenel/docufy/v2/internal/config"
 	"github.com/spf13/cobra"
 
 	// Converter modüllerini kaydet
-	_ "github.com/mlihgenel/docufy/internal/converter"
+	_ "github.com/mlihgenel/docufy/v2/internal/converter"
 )
 
 var (

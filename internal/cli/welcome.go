@@ -6,7 +6,7 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 
-	"github.com/mlihgenel/docufy/internal/installer"
+	"github.com/mlihgenel/docufy/v2/internal/installer"
 )
 
 // ========================================

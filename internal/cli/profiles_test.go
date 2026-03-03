@@ -9,7 +9,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/mlihgenel/docufy/internal/profile"
+	"github.com/mlihgenel/docufy/v2/internal/profile"
 )
 
 func TestBuildProfileDefinitionFromInputNonInteractive(t *testing.T) {

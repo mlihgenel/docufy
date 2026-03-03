@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mlihgenel/docufy/internal/pipeline"
+	"github.com/mlihgenel/docufy/v2/internal/pipeline"
 )
 
 func TestLoadBatchResumeSuccess(t *testing.T) {

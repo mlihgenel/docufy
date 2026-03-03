@@ -3,7 +3,7 @@ package entrypoint
 import (
 	"strings"
 
-	"github.com/mlihgenel/docufy/internal/cli"
+	"github.com/mlihgenel/docufy/v2/internal/cli"
 )
 
 // Run uygulama giriş akışını ortaklaştırır; farklı main paketleri bunu çağırabilir.

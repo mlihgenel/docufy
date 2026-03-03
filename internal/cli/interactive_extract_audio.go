@@ -9,7 +9,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/mlihgenel/docufy/internal/converter"
+	"github.com/mlihgenel/docufy/v2/internal/converter"
 )
 
 func (m interactiveModel) goToExtractAudioBrowser() interactiveModel {

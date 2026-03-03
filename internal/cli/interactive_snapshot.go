@@ -8,7 +8,7 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/mlihgenel/docufy/internal/converter"
+	"github.com/mlihgenel/docufy/v2/internal/converter"
 )
 
 func (m interactiveModel) goToSnapshotBrowser() interactiveModel {

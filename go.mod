@@ -1,4 +1,4 @@
-module github.com/mlihgenel/docufy
+module github.com/mlihgenel/docufy/v2
 
 go 1.25.0
 

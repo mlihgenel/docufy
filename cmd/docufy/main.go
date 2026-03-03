@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/mlihgenel/docufy/internal/entrypoint"
+	"github.com/mlihgenel/docufy/v2/internal/entrypoint"
 )
 
 var (

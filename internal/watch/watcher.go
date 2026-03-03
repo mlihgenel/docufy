@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/mlihgenel/docufy/internal/converter"
+	"github.com/mlihgenel/docufy/v2/internal/converter"
 )
 
 type fileState struct {

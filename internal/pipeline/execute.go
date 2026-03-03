@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mlihgenel/docufy/internal/converter"
+	"github.com/mlihgenel/docufy/v2/internal/converter"
 )
 
 // ExecuteConfig pipeline çalışma ayarlarını tutar.

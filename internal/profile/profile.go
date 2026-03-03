@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mlihgenel/docufy/internal/batch"
-	"github.com/mlihgenel/docufy/internal/converter"
+	"github.com/mlihgenel/docufy/v2/internal/batch"
+	"github.com/mlihgenel/docufy/v2/internal/converter"
 )
 
 // Definition dönüşüm profili alanlarını tutar.

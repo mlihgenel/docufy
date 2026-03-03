@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/mlihgenel/docufy/internal/pipeline"
+	"github.com/mlihgenel/docufy/v2/internal/pipeline"
 )
 
 func TestResolvePipelinePaths(t *testing.T) {

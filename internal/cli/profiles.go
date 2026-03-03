@@ -10,8 +10,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/mlihgenel/docufy/internal/profile"
-	"github.com/mlihgenel/docufy/internal/ui"
+	"github.com/mlihgenel/docufy/v2/internal/profile"
+	"github.com/mlihgenel/docufy/v2/internal/ui"
 )
 
 var (

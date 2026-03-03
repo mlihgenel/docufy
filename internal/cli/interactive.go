@@ -13,12 +13,12 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
-	"github.com/mlihgenel/docufy/internal/batch"
-	"github.com/mlihgenel/docufy/internal/config"
-	"github.com/mlihgenel/docufy/internal/converter"
-	"github.com/mlihgenel/docufy/internal/installer"
-	"github.com/mlihgenel/docufy/internal/profile"
-	convwatch "github.com/mlihgenel/docufy/internal/watch"
+	"github.com/mlihgenel/docufy/v2/internal/batch"
+	"github.com/mlihgenel/docufy/v2/internal/config"
+	"github.com/mlihgenel/docufy/v2/internal/converter"
+	"github.com/mlihgenel/docufy/v2/internal/installer"
+	"github.com/mlihgenel/docufy/v2/internal/profile"
+	convwatch "github.com/mlihgenel/docufy/v2/internal/watch"
 )
 
 // ========================================

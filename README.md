@@ -76,7 +76,7 @@ Docufy, dosya dönüştürme işlemlerini internet servislerine yükleme yapmada
 
 ### 1. Go ile kurulum (önerilen)
 ```bash
-go install github.com/mlihgenel/docufy/cmd/docufy@latest
+go install github.com/mlihgenel/docufy/v2/cmd/docufy@latest
 ```
 
 Kurulum sonrası herhangi bir dizinden çalıştırabilmek için binary yolunun `PATH` içinde olması gerekir.
