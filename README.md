@@ -1,7 +1,7 @@
-# File Converter CLI
+# Docufy
 
 <p align="center">
-  <img src="docs/assets/fileconverter.gif" alt="File Converter CLI Arayüzü">
+  <img src="docs/assets/docufy.gif" alt="Docufy Arayüzü">
 </p> 
 
 
@@ -14,7 +14,7 @@
   <img src="https://img.shields.io/badge/Go-1.25+-00ADD8?style=flat-square&logo=go" alt="Go Version">
   <img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" alt="License">
   <img src="https://img.shields.io/badge/Platform-macOS%20%7C%20Linux%20%7C%20Windows-blue?style=flat-square" alt="Platform">
-  <a href="https://goreportcard.com/report/github.com/mlihgenel/fileconverter-cli"><img src="https://goreportcard.com/badge/github.com/mlihgenel/fileconverter-cli?style=flat-square" alt="Go Report Card"></a>
+  <a href="https://goreportcard.com/report/github.com/mlihgenel/docufy"><img src="https://goreportcard.com/badge/github.com/mlihgenel/docufy?style=flat-square" alt="Go Report Card"></a>
 </p>
 
 ## İçindekiler
@@ -36,7 +36,7 @@
 - [Lisans](#lisans)
 
 ## Genel Bakış
-File Converter CLI, dosya dönüştürme işlemlerini internet servislerine yükleme yapmadan yerel makinede gerçekleştiren bir komut satırı uygulamasıdır.
+Docufy, dosya dönüştürme işlemlerini internet servislerine yükleme yapmadan yerel makinede gerçekleştiren bir komut satırı uygulamasıdır.
 
 - Gizlilik odaklıdır: dosyalar cihazdan çıkmaz.
 - İki kullanım modu sunar: CLI (otomasyon/script) ve interaktif TUI (menü tabanlı).
@@ -64,11 +64,11 @@ File Converter CLI, dosya dönüştürme işlemlerini internet servislerine yük
 - Çıktı dizinine yazarken klasör yapısını koruma (`batch --preserve-tree`).
 - Çakışma politikası (`--on-conflict`: `overwrite`, `skip`, `versioned`).
 - Otomatik retry (`--retry`, `--retry-delay`) ve raporlama (`--report`, `--report-file`).
-- Hazır + kullanıcı tanımlı profil sistemi (`--profile`: built-in profiller ve `~/.fileconverter/profiles/*.toml`).
+- Hazır + kullanıcı tanımlı profil sistemi (`--profile`: built-in profiller ve `~/.docufy/profiles/*.toml`).
 - Metadata kontrolü (`--preserve-metadata`, `--strip-metadata`).
 - Klasör izleme ile otomatik dönüşüm (`watch` komutu, event-driven + polling fallback).
 - Makine-okunur CLI çıktısı (`--output-format json`).
-- Proje bazlı ayarlar: `.fileconverter.toml` (flag > env > project config > default).
+- Proje bazlı ayarlar: `.docufy.toml` (flag > env > project config > default).
 - Harici bağımlılık kontrolü (FFmpeg, LibreOffice, Pandoc).
 - Format alias desteği (`jpeg -> jpg`, `tiff -> tif`, `markdown -> md`).
 
@@ -76,7 +76,7 @@ File Converter CLI, dosya dönüştürme işlemlerini internet servislerine yük
 
 ### 1. Go ile kurulum (önerilen)
 ```bash
-go install github.com/mlihgenel/fileconverter-cli/cmd/fileconverter-cli@latest
+go install github.com/mlihgenel/docufy/cmd/docufy@latest
 ```
 
 Kurulum sonrası herhangi bir dizinden çalıştırabilmek için binary yolunun `PATH` içinde olması gerekir.
@@ -102,43 +102,43 @@ Ardından yeni bir terminal açın.
 
 ### 3. Kaynaktan derleme
 ```bash
-git clone https://github.com/mlihgenel/fileconverter-cli.git
-cd fileconverter-cli
-go build -o fileconverter-cli ./cmd/fileconverter-cli
-./fileconverter-cli --help
+git clone https://github.com/mlihgenel/docufy.git
+cd docufy
+go build -o docufy ./cmd/docufy
+./docufy --help
 ```
 
-Not: Sürüm bilgisi artık build metadata'dan otomatik okunur; `cmd/fileconverter-cli/main.go` içinde elle sürüm güncellemek gerekmez.
+Not: Sürüm bilgisi artık build metadata'dan otomatik okunur; `cmd/docufy/main.go` içinde elle sürüm güncellemek gerekmez.
 Release için isterseniz sürümü build anında net verebilirsiniz:
 ```bash
-go build -ldflags "-X main.version=$(git describe --tags --always --dirty | sed 's/^v//')" -o fileconverter-cli ./cmd/fileconverter-cli
+go build -ldflags "-X main.version=$(git describe --tags --always --dirty | sed 's/^v//')" -o docufy ./cmd/docufy
 ```
 
 Windows için:
 ```powershell
-go build -o fileconverter-cli.exe ./cmd/fileconverter-cli
-.\fileconverter-cli.exe --help
+go build -o docufy.exe ./cmd/docufy
+.\docufy.exe --help
 ```
 
 ## Hızlı Başlangıç
 
 ### Yardım menüsü
 ```bash
-fileconverter-cli --help
-fileconverter-cli help convert
-fileconverter-cli help batch
-fileconverter-cli help watch
-fileconverter-cli help pipeline
-fileconverter-cli help video
-fileconverter-cli help formats
-fileconverter-cli help resize-presets
-fileconverter-cli help completion
-fileconverter-cli help profiles
+docufy --help
+docufy help convert
+docufy help batch
+docufy help watch
+docufy help pipeline
+docufy help video
+docufy help formats
+docufy help resize-presets
+docufy help completion
+docufy help profiles
 ```
 
 ### İnteraktif mod (TUI)
 ```bash
-fileconverter-cli
+docufy
 ```
 
 Interaktif ana menü (bölüm bazlı):
@@ -149,132 +149,132 @@ Interaktif ana menü (bölüm bazlı):
 
 TUI açmadan doğrudan CLI ile çalışmak için:
 ```bash
-fileconverter-cli --help
-fileconverter-cli help <komut>
+docufy --help
+docufy help <komut>
 ```
 
 ### Shell completion
 ```bash
 # Zsh
-fileconverter-cli completion zsh > "${fpath[1]}/_fileconverter-cli"
+docufy completion zsh > "${fpath[1]}/_docufy"
 
 # Bash
-fileconverter-cli completion bash > /etc/bash_completion.d/fileconverter-cli
+docufy completion bash > /etc/bash_completion.d/docufy
 ```
 
 Detaylar ve diğer shell'ler için:
 ```bash
-fileconverter-cli completion --help
+docufy completion --help
 ```
 
 ### Format sorgulama
 ```bash
-fileconverter-cli formats
-fileconverter-cli formats --from mp4
-fileconverter-cli formats --to gif
-fileconverter-cli formats --output-format json
+docufy formats
+docufy formats --from mp4
+docufy formats --to gif
+docufy formats --output-format json
 ```
 
 ### Tek dosya dönüşümü
 ```bash
 # Belge
-fileconverter-cli convert belge.md --to pdf
+docufy convert belge.md --to pdf
 
 # Görsel
-fileconverter-cli convert fotograf.jpeg --to png
+docufy convert fotograf.jpeg --to png
 
 # HEIC/HEIF görseli PNG'ye dönüştür
-fileconverter-cli convert IMG_1234.HEIC --to png
+docufy convert IMG_1234.HEIC --to png
 
 # SVG dosyasını PDF'e dönüştür
-fileconverter-cli convert logo.svg --to pdf
+docufy convert logo.svg --to pdf
 
 # Görseli WebP'ye dönüştür
-fileconverter-cli convert fotograf.png --to webp
+docufy convert fotograf.png --to webp
 
 # Görsel optimizasyonu (dosya boyutunu küçült)
-fileconverter-cli convert fotograf.jpg --to jpg --optimize
-fileconverter-cli convert fotograf.jpg --to jpg --target-size 500kb
+docufy convert fotograf.jpg --to jpg --optimize
+docufy convert fotograf.jpg --to jpg --target-size 500kb
 
 # Ses
-fileconverter-cli convert ses.mp3 --to wav
+docufy convert ses.mp3 --to wav
 
 # Video -> GIF
-fileconverter-cli convert klip.mp4 --to gif --quality 80
+docufy convert klip.mp4 --to gif --quality 80
 
 # Yatay videoyu dikeye çevir (siyah boşluklarla oran koru)
-fileconverter-cli convert klip.mp4 --to mp4 --preset story --resize-mode pad
+docufy convert klip.mp4 --to mp4 --preset story --resize-mode pad
 
 # Görseli manuel ölçüyle boyutlandır (cm)
-fileconverter-cli convert fotograf.webp --to png --width 12 --height 18 --unit cm --dpi 300
+docufy convert fotograf.webp --to png --width 12 --height 18 --unit cm --dpi 300
 
 # Profil kullanımı (story çıktı için)
-fileconverter-cli convert klip.mp4 --to mp4 --profile social-story
+docufy convert klip.mp4 --to mp4 --profile social-story
 
 # Kullanıcı profili oluştur ve kullan
-fileconverter-cli profiles create story-fast --quality 83 --preset story --resize-mode fit --metadata-mode strip
-fileconverter-cli convert klip.mp4 --to mp4 --profile story-fast
+docufy profiles create story-fast --quality 83 --preset story --resize-mode fit --metadata-mode strip
+docufy convert klip.mp4 --to mp4 --profile story-fast
 
 # Metadata temizleme
-fileconverter-cli convert kamera.mov --to mp4 --strip-metadata
+docufy convert kamera.mov --to mp4 --strip-metadata
 
 # Dosya bilgisi görme
-fileconverter-cli info fotograf.jpg
-fileconverter-cli info video.mp4 --output-format json
+docufy info fotograf.jpg
+docufy info video.mp4 --output-format json
 ```
 
 ### Toplu (batch) dönüşüm
 ```bash
 # Dizindeki tüm .md dosyalarını PDF yap
-fileconverter-cli batch ./docs --from md --to pdf
+docufy batch ./docs --from md --to pdf
 
 # Alt dizinlerle birlikte
-fileconverter-cli batch ./videolar --from mp4 --to gif --recursive
+docufy batch ./videolar --from mp4 --to gif --recursive
 
 # Ön izleme (dönüştürmeden planı gösterir)
-fileconverter-cli batch ./resimler --from jpg --to png --dry-run
+docufy batch ./resimler --from jpg --to png --dry-run
 
 # Glob kullanımı
-fileconverter-cli batch "*.png" --from png --to jpg --quality 85
+docufy batch "*.png" --from png --to jpg --quality 85
 
 # Toplu olarak story ölçüsüne getir
-fileconverter-cli batch ./videolar --from mp4 --to mp4 --preset story --resize-mode pad
+docufy batch ./videolar --from mp4 --to mp4 --preset story --resize-mode pad
 
 # Recursive batch'te çıktı klasörü altında kaynak dizin yapısını koru
-fileconverter-cli batch ./assets --from png --to jpg --recursive --output ./export --preserve-tree
+docufy batch ./assets --from png --to jpg --recursive --output ./export --preserve-tree
 
 # Çakışma ve retry ile JSON rapor üret
-fileconverter-cli batch ./resimler --from jpg --to png --on-conflict versioned --retry 2 --retry-delay 1s --report json --report-file ./reports/batch.json
+docufy batch ./resimler --from jpg --to png --on-conflict versioned --retry 2 --retry-delay 1s --report json --report-file ./reports/batch.json
 
 # Önceki JSON raporundan başarılı işleri atlayarak devam et
-fileconverter-cli batch ./resimler --from jpg --to png --resume-from-report ./reports/batch.json
+docufy batch ./resimler --from jpg --to png --resume-from-report ./reports/batch.json
 
 # Profil + metadata modu ile batch
-fileconverter-cli batch ./videolar --from mp4 --to mp4 --profile social-story --strip-metadata
+docufy batch ./videolar --from mp4 --to mp4 --profile social-story --strip-metadata
 ```
 
 ### Watch modu (otomatik dönüşüm)
 ```bash
 # incoming klasörünü izle, yeni webp dosyalarını jpg yap
-fileconverter-cli watch ./incoming --from webp --to jpg
+docufy watch ./incoming --from webp --to jpg
 
 # Alt dizinlerle birlikte izle
-fileconverter-cli watch ./videolar --from mp4 --to gif --recursive --quality 80
+docufy watch ./videolar --from mp4 --to gif --recursive --quality 80
 
 # Profil ile izle
-fileconverter-cli watch ./incoming --from mov --to mp4 --profile archive-lossless
+docufy watch ./incoming --from mov --to mp4 --profile archive-lossless
 ```
 
 ### Pipeline modu (çok adımlı akış)
 ```bash
 # Pipeline spec dosyasını çalıştır
-fileconverter-cli pipeline run ./pipeline.json
+docufy pipeline run ./pipeline.json
 
 # Profil ve metadata ile çalıştır, JSON rapor al
-fileconverter-cli pipeline run ./pipeline.json --profile social-story --strip-metadata --report json --report-file ./reports/pipeline.json
+docufy pipeline run ./pipeline.json --profile social-story --strip-metadata --report json --report-file ./reports/pipeline.json
 
 # Önceki JSON rapora göre başarılı step'leri atlayıp kaldığı yerden devam et
-fileconverter-cli pipeline run ./pipeline.json --resume-from-report ./reports/pipeline.json
+docufy pipeline run ./pipeline.json --resume-from-report ./reports/pipeline.json
 ```
 
 Örnek spec dosyası: `examples/pipeline.example.json`
@@ -298,60 +298,60 @@ fileconverter-cli pipeline run ./pipeline.json --resume-from-report ./reports/pi
 ### Video ve Ses Araçları
 ```bash
 # Videodan ses kanalını MP3 olarak çıkar
-fileconverter-cli video extract-audio klip.mp4
+docufy video extract-audio klip.mp4
 
 # Videodan ses kanalını re-encode etmeden (copy) orijinal formatıyla çıkar
-fileconverter-cli video extract-audio orijinal.mov --copy
+docufy video extract-audio orijinal.mov --copy
 
 # Videonun 30. saniyesinden tek kare (snapshot) al
-fileconverter-cli video snapshot klip.mp4 --at 30 --to jpg
+docufy video snapshot klip.mp4 --at 30 --to jpg
 
 # Videonun tam ortasından (%50) yüksek kalite snapshot al
-fileconverter-cli video snapshot klip.mp4 --at %50 --to png
+docufy video snapshot klip.mp4 --at %50 --to png
 
 # Aynı codec'e sahip parçaları hızlıca birleştir (concat demuxer)
-fileconverter-cli video merge part1.mp4 part2.mp4 --name full_video
+docufy video merge part1.mp4 part2.mp4 --name full_video
 
 # Farklı codec'lere sahip videoları re-encode ederek birleştir
-fileconverter-cli video merge iphone.mov web.webm --to mp4 --reencode --quality 80
+docufy video merge iphone.mov web.webm --to mp4 --reencode --quality 80
 
 # Ses dosyasının ses seviyesini EBU R128 (LUFS) standardına göre normalize et
-fileconverter-cli audio normalize podcast.mp3 --target-lufs -16
+docufy audio normalize podcast.mp3 --target-lufs -16
 
 # 5. saniyeden başlayıp 10 saniyelik klip çıkar
-fileconverter-cli video trim input.mp4 --start 00:00:05 --duration 10
+docufy video trim input.mp4 --start 00:00:05 --duration 10
 
 # 23-25 saniye aralığını videodan sil ve kalan parçaları birleştir
-fileconverter-cli video trim input.mp4 --mode remove --start 00:00:23 --duration 2
+docufy video trim input.mp4 --mode remove --start 00:00:23 --duration 2
 
 # Birden fazla aralığı tek seferde sil (sadece remove modunda)
-fileconverter-cli video trim input.mp4 --mode remove --ranges "00:00:05-00:00:08,00:00:20-00:00:25"
+docufy video trim input.mp4 --mode remove --ranges "00:00:05-00:00:08,00:00:20-00:00:25"
 
 # Preview/plan: işlemden önce tam etkiyi gör (dosya yazmaz)
-fileconverter-cli video trim input.mp4 --mode remove --ranges "5-8,20-25" --dry-run
+docufy video trim input.mp4 --mode remove --ranges "5-8,20-25" --dry-run
 ```
 
 ## Komut Referansı
 
 | Komut | Ne yapar | Örnek |
 |---|---|---|
-| `fileconverter-cli` | İnteraktif TUI modunu başlatır | `fileconverter-cli` |
-| `fileconverter-cli convert <dosya>` | Tek dosya dönüşümü | `fileconverter-cli convert input.mp4 --to gif` |
-| `fileconverter-cli batch <dizin/glob>` | Toplu dönüşüm | `fileconverter-cli batch ./src --from md --to html` |
-| `fileconverter-cli watch <dizin>` | Klasörü izleyip otomatik dönüşüm yapar | `fileconverter-cli watch ./incoming --from webp --to jpg` |
-| `fileconverter-cli pipeline run <dosya>` | JSON pipeline akışını çalıştırır | `fileconverter-cli pipeline run ./pipeline.json` |
-| `fileconverter-cli video trim <dosya>` | `clip`: aralık çıkarır, `remove`: aralığı siler + birleştirir | `fileconverter-cli video trim input.mp4 --mode remove --start 00:00:23 --duration 2` |
-| `fileconverter-cli video extract-audio <dosya>` | Videodan ses kanalını çıkarır | `fileconverter-cli video extract-audio input.mp4 --to wav` |
-| `fileconverter-cli video snapshot <dosya>` | Videodan tek kare seçer | `fileconverter-cli video snapshot input.mp4 --at %50` |
-| `fileconverter-cli video merge <dosyalar...>` | Birden fazla videoyu birleştirir | `fileconverter-cli video merge part1.mp4 part2.mp4` |
-| `fileconverter-cli audio normalize <dosya>` | Ses seviyesini EBU R128'e göre dengeler | `fileconverter-cli audio normalize ses.mp3 --target-lufs -14` |
-| `fileconverter-cli resize-presets` | Hazır boyut presetlerini listeler | `fileconverter-cli resize-presets` |
-| `fileconverter-cli info <dosya>` | Dosya bilgisi gösterir (format, boyut, çözünürlük, codec) | `fileconverter-cli info foto.jpg` |
-| `fileconverter-cli formats` | Desteklenen dönüşümleri listeler | `fileconverter-cli formats --from pdf` |
-| `fileconverter-cli completion <shell>` | Shell completion üretir | `fileconverter-cli completion zsh` |
-| `fileconverter-cli profiles list` | Built-in ve kullanıcı profillerini listeler | `fileconverter-cli profiles list` |
-| `fileconverter-cli profiles create [ad]` | Yeni kullanıcı profili oluşturur | `fileconverter-cli profiles create story-fast --quality 83` |
-| `fileconverter-cli help [komut]` | Komut yardımı gösterir | `fileconverter-cli help batch` |
+| `docufy` | İnteraktif TUI modunu başlatır | `docufy` |
+| `docufy convert <dosya>` | Tek dosya dönüşümü | `docufy convert input.mp4 --to gif` |
+| `docufy batch <dizin/glob>` | Toplu dönüşüm | `docufy batch ./src --from md --to html` |
+| `docufy watch <dizin>` | Klasörü izleyip otomatik dönüşüm yapar | `docufy watch ./incoming --from webp --to jpg` |
+| `docufy pipeline run <dosya>` | JSON pipeline akışını çalıştırır | `docufy pipeline run ./pipeline.json` |
+| `docufy video trim <dosya>` | `clip`: aralık çıkarır, `remove`: aralığı siler + birleştirir | `docufy video trim input.mp4 --mode remove --start 00:00:23 --duration 2` |
+| `docufy video extract-audio <dosya>` | Videodan ses kanalını çıkarır | `docufy video extract-audio input.mp4 --to wav` |
+| `docufy video snapshot <dosya>` | Videodan tek kare seçer | `docufy video snapshot input.mp4 --at %50` |
+| `docufy video merge <dosyalar...>` | Birden fazla videoyu birleştirir | `docufy video merge part1.mp4 part2.mp4` |
+| `docufy audio normalize <dosya>` | Ses seviyesini EBU R128'e göre dengeler | `docufy audio normalize ses.mp3 --target-lufs -14` |
+| `docufy resize-presets` | Hazır boyut presetlerini listeler | `docufy resize-presets` |
+| `docufy info <dosya>` | Dosya bilgisi gösterir (format, boyut, çözünürlük, codec) | `docufy info foto.jpg` |
+| `docufy formats` | Desteklenen dönüşümleri listeler | `docufy formats --from pdf` |
+| `docufy completion <shell>` | Shell completion üretir | `docufy completion zsh` |
+| `docufy profiles list` | Built-in ve kullanıcı profillerini listeler | `docufy profiles list` |
+| `docufy profiles create [ad]` | Yeni kullanıcı profili oluşturur | `docufy profiles create story-fast --quality 83` |
+| `docufy help [komut]` | Komut yardımı gösterir | `docufy help batch` |
 
 ## Flag Referansı
 
@@ -370,7 +370,7 @@ fileconverter-cli video trim input.mp4 --mode remove --ranges "5-8,20-25" --dry-
 | Flag | Kısa | Açıklama |
 |---|---|---|
 | `--to` | `-t` | Hedef format (zorunlu) |
-| `--profile` | - | Profil adı: built-in veya `~/.fileconverter/profiles/` altındaki kullanıcı profili |
+| `--profile` | - | Profil adı: built-in veya `~/.docufy/profiles/` altındaki kullanıcı profili |
 | `--quality` | `-q` | Kalite seviyesi (1-100) |
 | `--name` | `-n` | Çıktı dosya adı (uzantısız) |
 | `--on-conflict` | - | Çakışma politikası: `overwrite`, `skip`, `versioned` |
@@ -391,7 +391,7 @@ fileconverter-cli video trim input.mp4 --mode remove --ranges "5-8,20-25" --dry-
 |---|---|---|
 | `--from` | `-f` | Kaynak format (zorunlu) |
 | `--to` | `-t` | Hedef format (zorunlu) |
-| `--profile` | - | Profil adı: built-in veya `~/.fileconverter/profiles/` altındaki kullanıcı profili |
+| `--profile` | - | Profil adı: built-in veya `~/.docufy/profiles/` altındaki kullanıcı profili |
 | `--recursive` | `-r` | Alt dizinleri de tara |
 | `--preserve-tree` | - | Dizin modunda `--output` altına kaynak klasör yapısını korur |
 | `--dry-run` | - | Dönüştürmeden önce planı göster |
@@ -417,7 +417,7 @@ fileconverter-cli video trim input.mp4 --mode remove --ranges "5-8,20-25" --dry-
 |---|---|---|
 | `--from` | `-f` | Kaynak format (zorunlu) |
 | `--to` | `-t` | Hedef format (zorunlu) |
-| `--profile` | - | Profil adı: built-in veya `~/.fileconverter/profiles/` altındaki kullanıcı profili |
+| `--profile` | - | Profil adı: built-in veya `~/.docufy/profiles/` altındaki kullanıcı profili |
 | `--recursive` | `-r` | Alt dizinleri de izle |
 | `--quality` | `-q` | Kalite seviyesi (1-100) |
 | `--on-conflict` | - | Çakışma politikası: `overwrite`, `skip`, `versioned` |
@@ -432,7 +432,7 @@ fileconverter-cli video trim input.mp4 --mode remove --ranges "5-8,20-25" --dry-
 
 | Flag | Kısa | Açıklama |
 |---|---|---|
-| `--profile` | - | Profil adı: built-in veya `~/.fileconverter/profiles/` altındaki kullanıcı profili |
+| `--profile` | - | Profil adı: built-in veya `~/.docufy/profiles/` altındaki kullanıcı profili |
 | `--quality` | `-q` | Varsayılan kalite seviyesi (1-100) |
 | `--on-conflict` | - | Çakışma politikası: `overwrite`, `skip`, `versioned` |
 | `--preserve-metadata` | - | Metadata bilgisini korumayı dener |
@@ -457,7 +457,7 @@ fileconverter-cli video trim input.mp4 --mode remove --ranges "5-8,20-25" --dry-
 | `--to` | - | Hedef format (`mp4`, `mov` vb.) |
 | `--output-file` | - | Tam çıktı dosya yolu |
 | `--name` | `-n` | Çıktı dosya adı (uzantısız) |
-| `--profile` | - | Profil adı: built-in veya `~/.fileconverter/profiles/` altındaki kullanıcı profili |
+| `--profile` | - | Profil adı: built-in veya `~/.docufy/profiles/` altındaki kullanıcı profili |
 | `--quality` | `-q` | Reencode modunda kalite seviyesi |
 | `--on-conflict` | - | Çakışma politikası: `overwrite`, `skip`, `versioned` |
 | `--preserve-metadata` | - | Metadata bilgisini korumayı dener |
@@ -482,9 +482,9 @@ fileconverter-cli video trim input.mp4 --mode remove --ranges "5-8,20-25" --dry-
 - `archive-lossless`: arşiv odaklı kalite/metadata koruma odaklı ayarlar.
 
 Kullanıcı profilleri:
-- Dizin: `~/.fileconverter/profiles/`
+- Dizin: `~/.docufy/profiles/`
 - Format: TOML
-- Komutlar: `fileconverter-cli profiles list` ve `fileconverter-cli profiles create`
+- Komutlar: `docufy profiles list` ve `docufy profiles create`
 - Aynı isimli kullanıcı profili, built-in profilin alanlarını override eder.
 
 Örnek kullanıcı profili:
@@ -501,22 +501,22 @@ retry_delay = "500ms"
 
 Örnek dosya yolu:
 ```text
-~/.fileconverter/profiles/story-fast.toml
+~/.docufy/profiles/story-fast.toml
 ```
 
 Kullanım:
 ```bash
-fileconverter-cli profiles list
-fileconverter-cli convert klip.mp4 --to mp4 --profile story-fast
-fileconverter-cli batch ./videolar --from mov --to mp4 --profile story-fast
-fileconverter-cli watch ./incoming --from mov --to mp4 --profile story-fast
+docufy profiles list
+docufy convert klip.mp4 --to mp4 --profile story-fast
+docufy batch ./videolar --from mov --to mp4 --profile story-fast
+docufy watch ./incoming --from mov --to mp4 --profile story-fast
 ```
 
 ## Desteklenen Formatlar
 
 En güncel ve tam matris için:
 ```bash
-fileconverter-cli formats
+docufy formats
 ```
 
 ### Belgeler
@@ -547,15 +547,15 @@ Uygulama interaktif modda eksik araçları kontrol eder ve kurulum için yönlen
 
 ## Yapılandırma
 
-- Konfigürasyon dosyası: `~/.fileconverter/config.json`
+- Konfigürasyon dosyası: `~/.docufy/config.json`
 - Bu dosyada ilk çalıştırma bilgisi ve varsayılan çıktı dizini tutulur.
 - İnteraktif moddan varsayılan çıktı dizinini değiştirebilirsiniz.
-- Kullanıcı tanımlı profiller `~/.fileconverter/profiles/*.toml` altında tutulur.
+- Kullanıcı tanımlı profiller `~/.docufy/profiles/*.toml` altında tutulur.
 
-### Proje bazlı yapılandırma (`.fileconverter.toml`)
+### Proje bazlı yapılandırma (`.docufy.toml`)
 
-CLI, çalışma dizininden başlayıp üst dizinlere çıkarak `.fileconverter.toml` arar.
-Hazır örnek için: `.fileconverter.toml.example` dosyasını kopyalayabilirsiniz.
+CLI, çalışma dizininden başlayıp üst dizinlere çıkarak `.docufy.toml` arar.
+Hazır örnek için: `.docufy.toml.example` dosyasını kopyalayabilirsiniz.
 
 Örnek:
 ```toml
@@ -573,39 +573,39 @@ report_format = "json"
 Öncelik sırası:
 1. CLI flag
 2. Environment variable
-3. `.fileconverter.toml`
+3. `.docufy.toml`
 4. Uygulama varsayılanı
 
 Desteklenen environment variable'lar:
-- `FILECONVERTER_OUTPUT`
-- `FILECONVERTER_WORKERS`
-- `FILECONVERTER_QUALITY`
-- `FILECONVERTER_PROFILE`
-- `FILECONVERTER_ON_CONFLICT`
-- `FILECONVERTER_METADATA`
-- `FILECONVERTER_RETRY`
-- `FILECONVERTER_RETRY_DELAY`
-- `FILECONVERTER_REPORT`
+- `DOCUFY_OUTPUT`
+- `DOCUFY_WORKERS`
+- `DOCUFY_QUALITY`
+- `DOCUFY_PROFILE`
+- `DOCUFY_ON_CONFLICT`
+- `DOCUFY_METADATA`
+- `DOCUFY_RETRY`
+- `DOCUFY_RETRY_DELAY`
+- `DOCUFY_REPORT`
 
 ## Sorun Giderme
 
-### `command not found: fileconverter-cli`
+### `command not found: docufy`
 - `PATH` içine `$(go env GOPATH)/bin` ekleyin.
 - Terminali yeniden açın.
 
 ### Eski sürüm/eskimiş help çıktısı görünüyor
 ```bash
 cd /proje/dizini
-go install ./cmd/fileconverter-cli
-which fileconverter-cli
-fileconverter-cli --help
+go install ./cmd/docufy
+which docufy
+docufy --help
 ```
 
 ### Dönüşüm desteklenmiyor hatası
 Önce formatları doğrulayın:
 ```bash
-fileconverter-cli formats --from <kaynak>
-fileconverter-cli formats --to <hedef>
+docufy formats --from <kaynak>
+docufy formats --to <hedef>
 ```
 
 ### FFmpeg bulunamadı
@@ -620,16 +620,16 @@ sudo apt install ffmpeg
 
 ## Geliştirme
 ```bash
-git clone https://github.com/mlihgenel/fileconverter-cli.git
-cd fileconverter-cli
+git clone https://github.com/mlihgenel/docufy.git
+cd docufy
 go test ./...
 go run . --help
 ```
 
 ## Proje Yapısı
 ```text
-fileconverter-cli/
-├── cmd/fileconverter-cli/ # Uygulama giriş noktası (main package)
+docufy/
+├── cmd/docufy/ # Uygulama giriş noktası (main package)
 ├── docs/assets/          # README ve proje dokümantasyon görselleri
 ├── examples/             # Örnek pipeline ve kullanım dosyaları
 ├── internal/cli/         # Cobra komutları ve TUI akışları
@@ -652,7 +652,7 @@ Katkılar memnuniyetle karşılanır.
 4. Testleri çalıştırın.
 5. Pull request gönderin.
 
-Issue ve öneriler için: [GitHub Issues](https://github.com/mlihgenel/fileconverter-cli/issues)
+Issue ve öneriler için: [GitHub Issues](https://github.com/mlihgenel/docufy/issues)
 
 ## Lisans
 Bu proje [MIT Lisansı](LICENSE) ile lisanslanmıştır.

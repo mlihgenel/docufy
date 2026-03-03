@@ -2,7 +2,7 @@
 # ---------------------
 /bin/
 /dist/
-/fileconverter
+/docufy
 *.exe
 *.exe~
 *.dll
