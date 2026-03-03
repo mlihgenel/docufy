@@ -1,0 +1,366 @@
+package cli
+
+import (
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+
+	"github.com/mlihgenel/fileconverter-cli/internal/converter"
+)
+
+func TestNormalizeVideoTrimTime(t *testing.T) {
+	got, err := normalizeVideoTrimTime("5,5", false)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got != "5.5" {
+		t.Fatalf("unexpected normalized value: %s", got)
+	}
+
+	got, err = normalizeVideoTrimTime("00:01:05", false)
+	if err != nil {
+		t.Fatalf("unexpected error for hh:mm:ss: %v", err)
+	}
+	if got != "00:01:05" {
+		t.Fatalf("unexpected hh:mm:ss normalization: %s", got)
+	}
+
+	if _, err := normalizeVideoTrimTime("0", false); err == nil {
+		t.Fatalf("expected error when duration is zero")
+	}
+	if _, err := normalizeVideoTrimTime("-1", true); err == nil {
+		t.Fatalf("expected error for negative value")
+	}
+}
+
+func TestParseVideoTrimToSeconds(t *testing.T) {
+	sec, err := parseVideoTrimToSeconds("01:02:03")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if sec != 3723 {
+		t.Fatalf("unexpected seconds value: %.2f", sec)
+	}
+
+	sec, err = parseVideoTrimToSeconds("10:30")
+	if err != nil {
+		t.Fatalf("unexpected error for mm:ss: %v", err)
+	}
+	if sec != 630 {
+		t.Fatalf("unexpected mm:ss conversion: %.2f", sec)
+	}
+
+	if _, err := parseVideoTrimToSeconds("00:70"); err == nil {
+		t.Fatalf("expected error for invalid seconds part")
+	}
+}
+
+func TestIsVideoTrimSourceFile(t *testing.T) {
+	if !isVideoTrimSourceFile("clip.mp4") {
+		t.Fatalf("expected mp4 to be accepted")
+	}
+	if isVideoTrimSourceFile("notes.txt") {
+		t.Fatalf("expected txt to be rejected")
+	}
+}
+
+func TestBuildVideoTrimExecutionClip(t *testing.T) {
+	m := newInteractiveModel(nil, false)
+	m.selectedFile = "/tmp/sample.mp4"
+	m.trimMode = trimModeClip
+	m.trimRangeType = trimRangeDuration
+	m.trimStartInput = "5"
+	m.trimDurationInput = "2"
+	m.trimCodec = "copy"
+	m.defaultOutput = "/tmp"
+
+	execution, err := m.buildVideoTrimExecution()
+	if err != nil {
+		t.Fatalf("unexpected execution build error: %v", err)
+	}
+	if execution.TargetFormat != "mp4" {
+		t.Fatalf("expected target format mp4, got %s", execution.TargetFormat)
+	}
+	if execution.Plan.Mode != trimModeClip {
+		t.Fatalf("expected clip plan mode, got %s", execution.Plan.Mode)
+	}
+	if !execution.Plan.ClipHasEnd || execution.Plan.ClipStartSec != 5 || execution.Plan.ClipEndSec != 7 {
+		t.Fatalf("unexpected clip plan values: %+v", execution.Plan)
+	}
+}
+
+func TestBuildVideoTrimExecutionRemove(t *testing.T) {
+	m := newInteractiveModel(nil, false)
+	m.selectedFile = "/tmp/sample.mp4"
+	m.trimMode = trimModeRemove
+	m.trimRangeType = trimRangeEnd
+	m.trimStartInput = "23"
+	m.trimEndInput = "25"
+	m.trimCodec = "copy"
+	m.defaultOutput = "/tmp"
+
+	execution, err := m.buildVideoTrimExecution()
+	if err != nil {
+		t.Fatalf("unexpected execution build error: %v", err)
+	}
+	if execution.Plan.Mode != trimModeRemove {
+		t.Fatalf("expected remove plan mode, got %s", execution.Plan.Mode)
+	}
+	if len(execution.Plan.RemoveRanges) != 1 {
+		t.Fatalf("expected 1 remove range, got %d", len(execution.Plan.RemoveRanges))
+	}
+	if execution.Plan.RemoveRanges[0].Start != 23 || execution.Plan.RemoveRanges[0].End != 25 {
+		t.Fatalf("unexpected remove range: %+v", execution.Plan.RemoveRanges[0])
+	}
+}
+
+func TestPrepareVideoTrimTimelineAndAdjust(t *testing.T) {
+	m := newInteractiveModel(nil, false)
+	m.selectedFile = "/tmp/sample.mp4"
+	m.trimMode = trimModeClip
+	m.trimRangeType = trimRangeDuration
+	m.trimStartInput = "10"
+	m.trimDurationInput = "5"
+
+	if err := m.prepareVideoTrimTimeline(); err != nil {
+		t.Fatalf("unexpected timeline prepare error: %v", err)
+	}
+	if m.trimTimelineStart != 10 || m.trimTimelineEnd != 15 {
+		t.Fatalf("unexpected timeline bounds: start=%.2f end=%.2f", m.trimTimelineStart, m.trimTimelineEnd)
+	}
+
+	m.cursor = 0
+	m.trimTimelineStep = 1
+	m.adjustVideoTrimTimeline(2)
+	if m.trimTimelineStart != 12 {
+		t.Fatalf("expected start to move to 12, got %.2f", m.trimTimelineStart)
+	}
+
+	m.cursor = 1
+	m.adjustVideoTrimTimeline(-1)
+	if m.trimTimelineEnd != 14 {
+		t.Fatalf("expected end to move to 14, got %.2f", m.trimTimelineEnd)
+	}
+}
+
+func TestTimelineStepHelpers(t *testing.T) {
+	if got := increaseTimelineStep(1); got != 2 {
+		t.Fatalf("expected increase from 1 to 2, got %.1f", got)
+	}
+	if got := decreaseTimelineStep(1); got != 0.5 {
+		t.Fatalf("expected decrease from 1 to 0.5, got %.1f", got)
+	}
+}
+
+func TestRemoveRangesForExecutionFromSegments(t *testing.T) {
+	m := newInteractiveModel(nil, false)
+	m.trimMode = trimModeRemove
+	m.trimSegments = []trimRange{
+		{Start: 5, End: 8},
+		{Start: 7.5, End: 10},
+		{Start: 20, End: 22},
+	}
+
+	ranges, err := m.removeRangesForExecution()
+	if err != nil {
+		t.Fatalf("unexpected remove ranges error: %v", err)
+	}
+	if len(ranges) != 2 {
+		t.Fatalf("expected merged ranges length 2, got %d", len(ranges))
+	}
+	if ranges[0].Start != 5 || ranges[0].End != 10 {
+		t.Fatalf("unexpected first merged range: %+v", ranges[0])
+	}
+}
+
+func TestRemoveTimelineSegmentLifecycle(t *testing.T) {
+	m := newInteractiveModel(nil, false)
+	m.trimMode = trimModeRemove
+	m.trimSegments = []trimRange{{Start: 5, End: 8}}
+	m.trimActiveSegment = 0
+	m.trimTimelineStart = 5
+	m.trimTimelineEnd = 8
+	m.trimTimelineStep = 1
+	m.trimTimelineKnown = true
+	m.trimTimelineMax = 30
+
+	if err := m.addRemoveTimelineSegment(); err != nil {
+		t.Fatalf("unexpected add segment error: %v", err)
+	}
+	if len(m.trimSegments) != 2 {
+		t.Fatalf("expected 2 segments after add, got %d", len(m.trimSegments))
+	}
+	if m.trimActiveSegment != 1 {
+		t.Fatalf("expected active segment index 1, got %d", m.trimActiveSegment)
+	}
+
+	m.selectPrevRemoveSegment()
+	if m.trimActiveSegment != 0 {
+		t.Fatalf("expected active segment index 0 after prev, got %d", m.trimActiveSegment)
+	}
+
+	if err := m.deleteActiveRemoveSegment(); err != nil {
+		t.Fatalf("unexpected delete segment error: %v", err)
+	}
+	if len(m.trimSegments) != 1 {
+		t.Fatalf("expected 1 segment after delete, got %d", len(m.trimSegments))
+	}
+}
+
+func TestMoveTimelineCursorSelectsNearestSegment(t *testing.T) {
+	m := newInteractiveModel(nil, false)
+	m.trimMode = trimModeRemove
+	m.trimTimelineKnown = true
+	m.trimTimelineMax = 60
+	m.trimTimelineStep = 1
+	m.trimSegments = []trimRange{
+		{Start: 5, End: 8},
+		{Start: 20, End: 25},
+		{Start: 40, End: 45},
+	}
+	m.trimActiveSegment = 0
+	m.syncTimelineFromActiveRemoveSegment()
+	m.centerTimelineCursorOnActiveSegment()
+
+	m.moveTimelineCursor(19)
+	if m.trimActiveSegment != 1 {
+		t.Fatalf("expected active segment index 1, got %d", m.trimActiveSegment)
+	}
+	if m.trimTimelineStart != 20 || m.trimTimelineEnd != 25 {
+		t.Fatalf("unexpected active segment bounds: %.1f-%.1f", m.trimTimelineStart, m.trimTimelineEnd)
+	}
+
+	m.moveTimelineCursor(20)
+	if m.trimActiveSegment != 2 {
+		t.Fatalf("expected active segment index 2, got %d", m.trimActiveSegment)
+	}
+}
+
+func TestSelectRemoveSegmentByKey(t *testing.T) {
+	m := newInteractiveModel(nil, false)
+	m.trimMode = trimModeRemove
+	m.trimSegments = []trimRange{
+		{Start: 5, End: 8},
+		{Start: 20, End: 25},
+	}
+
+	if err := m.selectRemoveSegmentByKey("2"); err != nil {
+		t.Fatalf("unexpected segment select error: %v", err)
+	}
+	if m.trimActiveSegment != 1 {
+		t.Fatalf("expected active segment index 1, got %d", m.trimActiveSegment)
+	}
+	if m.trimTimelineStart != 20 || m.trimTimelineEnd != 25 {
+		t.Fatalf("unexpected selected segment bounds: %.1f-%.1f", m.trimTimelineStart, m.trimTimelineEnd)
+	}
+	if m.trimTimelineCursor <= 20 || m.trimTimelineCursor >= 25 {
+		t.Fatalf("expected cursor centered within selected segment, got %.1f", m.trimTimelineCursor)
+	}
+
+	if err := m.selectRemoveSegmentByKey("9"); err == nil {
+		t.Fatalf("expected out-of-range key selection error")
+	}
+}
+
+func TestVideoTrimTimelineBarRemoveContainsCursorMarker(t *testing.T) {
+	m := newInteractiveModel(nil, false)
+	m.trimMode = trimModeRemove
+	m.trimTimelineKnown = true
+	m.trimTimelineMax = 60
+	m.trimTimelineCursor = 22
+	m.trimActiveSegment = 1
+	m.trimSegments = []trimRange{
+		{Start: 5, End: 8},
+		{Start: 20, End: 25},
+	}
+
+	bar := m.videoTrimTimelineBar(48)
+	if !strings.Contains(bar, "│") {
+		t.Fatalf("expected bar to include cursor marker, got %q", bar)
+	}
+	if !strings.Contains(bar, "◆") {
+		t.Fatalf("expected bar to include boundary markers, got %q", bar)
+	}
+}
+
+func TestBuildVideoTrimExecutionRemoveWithMultiSegments(t *testing.T) {
+	m := newInteractiveModel(nil, false)
+	m.selectedFile = "/tmp/sample.mp4"
+	m.trimMode = trimModeRemove
+	m.trimRangeType = trimRangeEnd
+	m.trimStartInput = "5"
+	m.trimEndInput = "8"
+	m.trimSegments = []trimRange{
+		{Start: 5, End: 8},
+		{Start: 20, End: 25},
+	}
+	m.trimCodec = "copy"
+	m.defaultOutput = "/tmp"
+
+	execution, err := m.buildVideoTrimExecution()
+	if err != nil {
+		t.Fatalf("unexpected execution build error: %v", err)
+	}
+	if len(execution.RemoveRanges) != 2 {
+		t.Fatalf("expected 2 remove ranges, got %d", len(execution.RemoveRanges))
+	}
+	if len(execution.Plan.RemoveRanges) != 2 {
+		t.Fatalf("expected plan to include 2 remove ranges, got %d", len(execution.Plan.RemoveRanges))
+	}
+}
+
+func TestResolveVideoTrimOutputPreview(t *testing.T) {
+	tmpDir := t.TempDir()
+	inputPath := filepath.Join(tmpDir, "sample.mp4")
+	if err := os.WriteFile(inputPath, []byte("dummy"), 0644); err != nil {
+		t.Fatalf("failed to create input file: %v", err)
+	}
+
+	m := newInteractiveModel(nil, false)
+	m.selectedFile = inputPath
+	m.defaultOutput = tmpDir
+	m.trimMode = trimModeClip
+	m.defaultOnConflict = converter.ConflictVersioned
+
+	preview, err := m.resolveVideoTrimOutputPreview(m.trimMode)
+	if err != nil {
+		t.Fatalf("unexpected preview error: %v", err)
+	}
+	if preview.TargetFormat != "mp4" {
+		t.Fatalf("expected target format mp4, got %s", preview.TargetFormat)
+	}
+	if preview.Skip {
+		t.Fatalf("expected skip=false for non-conflicting output")
+	}
+}
+
+func TestResolveVideoTrimOutputPreviewSkip(t *testing.T) {
+	tmpDir := t.TempDir()
+	inputPath := filepath.Join(tmpDir, "sample.mp4")
+	if err := os.WriteFile(inputPath, []byte("dummy"), 0644); err != nil {
+		t.Fatalf("failed to create input file: %v", err)
+	}
+	// Expected base output for clip mode.
+	baseOutput := filepath.Join(tmpDir, "sample_trim.mp4")
+	if err := os.WriteFile(baseOutput, []byte("exists"), 0644); err != nil {
+		t.Fatalf("failed to create existing output file: %v", err)
+	}
+
+	m := newInteractiveModel(nil, false)
+	m.selectedFile = inputPath
+	m.defaultOutput = tmpDir
+	m.trimMode = trimModeClip
+	m.defaultOnConflict = converter.ConflictSkip
+
+	preview, err := m.resolveVideoTrimOutputPreview(m.trimMode)
+	if err != nil {
+		t.Fatalf("unexpected preview error: %v", err)
+	}
+	if !preview.Skip {
+		t.Fatalf("expected skip=true for existing output with conflict skip")
+	}
+	if preview.ResolvedOutput != baseOutput {
+		t.Fatalf("unexpected resolved output path: %s", preview.ResolvedOutput)
+	}
+}

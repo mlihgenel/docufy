@@ -1,7 +1,7 @@
 # File Converter CLI
 
 <p align="center">
-  <img src="assets/fileconverter.gif" alt="File Converter CLI Arayüzü">
+  <img src="docs/assets/fileconverter.gif" alt="File Converter CLI Arayüzü">
 </p> 
 
 
@@ -76,7 +76,7 @@ File Converter CLI, dosya dönüştürme işlemlerini internet servislerine yük
 
 ### 1. Go ile kurulum (önerilen)
 ```bash
-go install github.com/mlihgenel/fileconverter-cli@latest
+go install github.com/mlihgenel/fileconverter-cli/cmd/fileconverter-cli@latest
 ```
 
 Kurulum sonrası herhangi bir dizinden çalıştırabilmek için binary yolunun `PATH` içinde olması gerekir.
@@ -104,19 +104,19 @@ Ardından yeni bir terminal açın.
 ```bash
 git clone https://github.com/mlihgenel/fileconverter-cli.git
 cd fileconverter-cli
-go build -o fileconverter-cli .
+go build -o fileconverter-cli ./cmd/fileconverter-cli
 ./fileconverter-cli --help
 ```
 
-Not: Sürüm bilgisi artık build metadata'dan otomatik okunur; `main.go` içinde elle sürüm güncellemek gerekmez.
+Not: Sürüm bilgisi artık build metadata'dan otomatik okunur; `cmd/fileconverter-cli/main.go` içinde elle sürüm güncellemek gerekmez.
 Release için isterseniz sürümü build anında net verebilirsiniz:
 ```bash
-go build -ldflags "-X main.version=$(git describe --tags --always --dirty | sed 's/^v//')" -o fileconverter-cli .
+go build -ldflags "-X main.version=$(git describe --tags --always --dirty | sed 's/^v//')" -o fileconverter-cli ./cmd/fileconverter-cli
 ```
 
 Windows için:
 ```powershell
-go build -o fileconverter-cli.exe .
+go build -o fileconverter-cli.exe ./cmd/fileconverter-cli
 .\fileconverter-cli.exe --help
 ```
 
@@ -277,7 +277,7 @@ fileconverter-cli pipeline run ./pipeline.json --profile social-story --strip-me
 fileconverter-cli pipeline run ./pipeline.json --resume-from-report ./reports/pipeline.json
 ```
 
-Örnek spec dosyası: `pipeline.example.json`
+Örnek spec dosyası: `examples/pipeline.example.json`
 
 ### Pipeline Spec (JSON)
 
@@ -596,7 +596,7 @@ Desteklenen environment variable'lar:
 ### Eski sürüm/eskimiş help çıktısı görünüyor
 ```bash
 cd /proje/dizini
-go install .
+go install ./cmd/fileconverter-cli
 which fileconverter-cli
 fileconverter-cli --help
 ```
@@ -629,7 +629,10 @@ go run . --help
 ## Proje Yapısı
 ```text
 fileconverter-cli/
-├── cmd/                  # Cobra komutları (convert, batch, watch, pipeline, formats, interactive)
+├── cmd/fileconverter-cli/ # Uygulama giriş noktası (main package)
+├── docs/assets/          # README ve proje dokümantasyon görselleri
+├── examples/             # Örnek pipeline ve kullanım dosyaları
+├── internal/cli/         # Cobra komutları ve TUI akışları
 ├── internal/converter/   # Dönüştürme motorları (document, image, audio, video)
 ├── internal/batch/       # Worker pool ve batch yürütme
 ├── internal/pipeline/    # Çok adımlı pipeline yürütme
@@ -637,9 +640,7 @@ fileconverter-cli/
 ├── internal/profile/     # Built-in ve kullanıcı profilleri
 ├── internal/config/      # Uygulama ayarları
 ├── internal/installer/   # Bağımlılık kontrol/kurulum yardımcıları
-├── internal/ui/          # Ortak terminal UI yardımcıları
-├── assets/               # README görselleri
-└── main.go               # Uygulama giriş noktası
+└── internal/ui/          # Ortak terminal UI yardımcıları
 ```
 
 ## Katkı
