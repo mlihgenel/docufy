@@ -80,6 +80,32 @@ func TestSaveConfigWritesDocufyPath(t *testing.T) {
 	}
 }
 
+func TestSetAndGetAISettings(t *testing.T) {
+	tempHome := t.TempDir()
+	restore := withConfigUserHomeDir(tempHome)
+	defer restore()
+
+	expected := AISettings{
+		Provider: "openai",
+		Model:    "gpt-4o-mini",
+		BaseURL:  "https://api.openai.com/v1",
+	}
+	if err := SetAISettings(expected); err != nil {
+		t.Fatalf("SetAISettings failed: %v", err)
+	}
+
+	got := GetAISettings()
+	if got.Provider != expected.Provider {
+		t.Fatalf("provider mismatch: got=%q want=%q", got.Provider, expected.Provider)
+	}
+	if got.Model != expected.Model {
+		t.Fatalf("model mismatch: got=%q want=%q", got.Model, expected.Model)
+	}
+	if got.BaseURL != expected.BaseURL {
+		t.Fatalf("base_url mismatch: got=%q want=%q", got.BaseURL, expected.BaseURL)
+	}
+}
+
 func withConfigUserHomeDir(home string) func() {
 	prev := userHomeDir
 	userHomeDir = func() (string, error) { return home, nil }

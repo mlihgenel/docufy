@@ -10,6 +10,15 @@ import (
 type AppConfig struct {
 	FirstRunCompleted bool   `json:"first_run_completed"`
 	DefaultOutputDir  string `json:"default_output_dir,omitempty"`
+	AIProvider        string `json:"ai_provider,omitempty"`
+	AIModel           string `json:"ai_model,omitempty"`
+	AIBaseURL         string `json:"ai_base_url,omitempty"`
+}
+
+type AISettings struct {
+	Provider string
+	Model    string
+	BaseURL  string
 }
 
 const (
@@ -128,5 +137,24 @@ func GetDefaultOutputDir() string {
 func SetDefaultOutputDir(dir string) error {
 	cfg, _ := LoadConfig()
 	cfg.DefaultOutputDir = dir
+	return SaveConfig(cfg)
+}
+
+// GetAISettings AI provider/model/base URL ayarlarını döner.
+func GetAISettings() AISettings {
+	cfg, _ := LoadConfig()
+	return AISettings{
+		Provider: cfg.AIProvider,
+		Model:    cfg.AIModel,
+		BaseURL:  cfg.AIBaseURL,
+	}
+}
+
+// SetAISettings AI provider/model/base URL ayarlarını kaydeder.
+func SetAISettings(settings AISettings) error {
+	cfg, _ := LoadConfig()
+	cfg.AIProvider = settings.Provider
+	cfg.AIModel = settings.Model
+	cfg.AIBaseURL = settings.BaseURL
 	return SaveConfig(cfg)
 }
