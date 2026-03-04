@@ -86,9 +86,10 @@ func TestSetAndGetAISettings(t *testing.T) {
 	defer restore()
 
 	expected := AISettings{
-		Provider: "openai",
-		Model:    "gpt-4o-mini",
-		BaseURL:  "https://api.openai.com/v1",
+		Provider:   "openai",
+		Model:      "gpt-4o-mini",
+		BaseURL:    "https://api.openai.com/v1",
+		SidecarURL: "http://127.0.0.1:8081",
 	}
 	if err := SetAISettings(expected); err != nil {
 		t.Fatalf("SetAISettings failed: %v", err)
@@ -103,6 +104,9 @@ func TestSetAndGetAISettings(t *testing.T) {
 	}
 	if got.BaseURL != expected.BaseURL {
 		t.Fatalf("base_url mismatch: got=%q want=%q", got.BaseURL, expected.BaseURL)
+	}
+	if got.SidecarURL != expected.SidecarURL {
+		t.Fatalf("sidecar_url mismatch: got=%q want=%q", got.SidecarURL, expected.SidecarURL)
 	}
 }
 

@@ -487,6 +487,7 @@ type interactiveModel struct {
 	aiProvider      string
 	aiModel         string
 	aiBaseURL       string
+	aiSidecarURL    string
 	aiSessionID     string
 	aiSessionReady  bool
 	aiStatusMessage string
@@ -568,6 +569,11 @@ func newInteractiveModel(deps []converter.ExternalTool, firstRun bool) interacti
 	if aiBaseURL == "" {
 		aiBaseURL = defaultAIBaseURL(aiProvider)
 	}
+	aiSidecarURL := strings.TrimSpace(os.Getenv("DOCUFY_AI_SIDECAR_URL"))
+	if aiSidecarURL == "" {
+		aiSidecarURL = strings.TrimSpace(aiSettings.SidecarURL)
+	}
+	aiSidecarURL = normalizeAISidecarURL(aiSidecarURL)
 
 	return interactiveModel{
 		state:             initialState,
@@ -598,6 +604,7 @@ func newInteractiveModel(deps []converter.ExternalTool, firstRun bool) interacti
 		aiProvider:        aiProvider,
 		aiModel:           aiModel,
 		aiBaseURL:         aiBaseURL,
+		aiSidecarURL:      aiSidecarURL,
 	}
 }
 
@@ -1390,11 +1397,12 @@ func (m interactiveModel) viewAIIntro() string {
 		MarginLeft(1)
 
 	info := fmt.Sprintf(
-		"%s\n%s\n%s\n%s",
+		"%s\n%s\n%s\n%s\n%s",
 		lipgloss.NewStyle().Bold(true).Foreground(status).Render("Durum: "+statusText),
 		dimStyle.Render("Provider: "+aiProviderLabel(m.aiProvider)),
 		dimStyle.Render("Model: "+m.aiModel),
 		dimStyle.Render("Base URL: "+displayAIBaseURL(m.aiBaseURL)),
+		dimStyle.Render("Çalışma Modu: "+aiRuntimeLabel(m.aiSidecarURL)),
 	)
 	b.WriteString(infoCard.Render(info))
 	b.WriteString("\n\n")

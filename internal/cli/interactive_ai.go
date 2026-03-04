@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -234,6 +235,25 @@ func defaultAIBaseURL(provider string) string {
 	}
 }
 
+func normalizeAISidecarURL(url string) string {
+	trimmed := strings.TrimSpace(url)
+	if trimmed == "" {
+		return ""
+	}
+	if strings.HasPrefix(trimmed, "http://") || strings.HasPrefix(trimmed, "https://") {
+		return strings.TrimRight(trimmed, "/")
+	}
+	return "http://" + strings.TrimRight(trimmed, "/")
+}
+
+func aiRuntimeLabel(sidecarURL string) string {
+	sidecarURL = normalizeAISidecarURL(sidecarURL)
+	if sidecarURL == "" {
+		return "Yerel Gateway"
+	}
+	return "Strands Sidecar (" + sidecarURL + ")"
+}
+
 func displayAIBaseURL(baseURL string) string {
 	if strings.TrimSpace(baseURL) == "" {
 		return "(varsayılan)"
@@ -282,9 +302,10 @@ func (m interactiveModel) applyAIProviderChoice(provider string) interactiveMode
 	m.aiSessionID = ""
 
 	err := config.SetAISettings(config.AISettings{
-		Provider: m.aiProvider,
-		Model:    m.aiModel,
-		BaseURL:  m.aiBaseURL,
+		Provider:   m.aiProvider,
+		Model:      m.aiModel,
+		BaseURL:    m.aiBaseURL,
+		SidecarURL: m.aiSidecarURL,
 	})
 	if err != nil {
 		m.aiStatusMessage = "AI ayarları kaydedilemedi: " + err.Error()
@@ -305,6 +326,7 @@ func (m interactiveModel) startAISession() interactiveModel {
 	if strings.TrimSpace(m.aiBaseURL) == "" {
 		m.aiBaseURL = defaultAIBaseURL(m.aiProvider)
 	}
+	m.aiSidecarURL = normalizeAISidecarURL(m.aiSidecarURL)
 
 	if providerNeedsAPIKey(m.aiProvider) && !m.hasAIKeyConfigured() {
 		m.aiStatusMessage = "Bu provider için API key gerekli. Ortam değişkeni veya giriş ekranını kullanın."
@@ -315,12 +337,63 @@ func (m interactiveModel) startAISession() interactiveModel {
 		m.aiSessionID = fmt.Sprintf("ai-%d", time.Now().Unix())
 	}
 	m.aiSessionReady = true
-	m.aiStatusMessage = fmt.Sprintf("AI oturumu hazır: %s / %s", aiProviderLabel(m.aiProvider), m.aiModel)
+
+	if sidecar := m.sidecarClient(); sidecar != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+		if _, err := sidecar.Health(ctx); err != nil {
+			m.aiStatusMessage = fmt.Sprintf("AI oturumu hazır (local fallback). Sidecar erişilemedi: %v", err)
+			return m.goToAIChat()
+		}
+	}
+
+	m.aiStatusMessage = fmt.Sprintf("AI oturumu hazır: %s / %s • %s", aiProviderLabel(m.aiProvider), m.aiModel, aiRuntimeLabel(m.aiSidecarURL))
 	return m.goToAIChat()
 }
 
 func (m interactiveModel) doAICommand(prompt string) tea.Cmd {
 	return func() tea.Msg {
+		if sidecar := m.sidecarClient(); sidecar != nil {
+			ctx, cancel := context.WithTimeout(context.Background(), aigateway.DefaultSidecarTimeout)
+			defer cancel()
+			res, err := sidecar.RunCommand(ctx, aigateway.SidecarCommandRequest{
+				Prompt:        prompt,
+				CurrentFile:   m.aiCurrentFile,
+				AllowedRoots:  m.aiPolicy().AllowedRoots,
+				DefaultOutput: m.defaultOutput,
+				Provider:      m.aiProvider,
+				Model:         m.aiModel,
+			})
+			if err == nil {
+				currentFile := m.aiCurrentFile
+				if strings.TrimSpace(res.CurrentFile) != "" {
+					currentFile = res.CurrentFile
+				}
+				resultText := strings.TrimSpace(res.ResultText)
+				if resultText == "" {
+					resultText = "AI komutu tamamlandı."
+				}
+				return aiToolDoneMsg{
+					resultText:  resultText,
+					currentFile: currentFile,
+					err:         nil,
+				}
+			}
+
+			gw := aigateway.NewGateway(m.aiPolicy())
+			resultText, currentFile, localErr := executeAICommand(gw, prompt, m.aiCurrentFile)
+			if localErr != nil {
+				return aiToolDoneMsg{
+					err: fmt.Errorf("sidecar hatası: %v; local hata: %w", err, localErr),
+				}
+			}
+			return aiToolDoneMsg{
+				resultText:  fmt.Sprintf("Sidecar erişilemedi (%v). Yerel gateway ile devam edildi. %s", err, resultText),
+				currentFile: currentFile,
+				err:         nil,
+			}
+		}
+
 		gw := aigateway.NewGateway(m.aiPolicy())
 		resultText, currentFile, err := executeAICommand(gw, prompt, m.aiCurrentFile)
 		return aiToolDoneMsg{
@@ -329,6 +402,13 @@ func (m interactiveModel) doAICommand(prompt string) tea.Cmd {
 			err:         err,
 		}
 	}
+}
+
+func (m interactiveModel) sidecarClient() *aigateway.SidecarClient {
+	if strings.TrimSpace(m.aiSidecarURL) == "" {
+		return nil
+	}
+	return aigateway.NewSidecarClient(m.aiSidecarURL, 0)
 }
 
 func (m interactiveModel) aiPolicy() aigateway.Policy {

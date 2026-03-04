@@ -13,12 +13,14 @@ type AppConfig struct {
 	AIProvider        string `json:"ai_provider,omitempty"`
 	AIModel           string `json:"ai_model,omitempty"`
 	AIBaseURL         string `json:"ai_base_url,omitempty"`
+	AISidecarURL      string `json:"ai_sidecar_url,omitempty"`
 }
 
 type AISettings struct {
-	Provider string
-	Model    string
-	BaseURL  string
+	Provider   string
+	Model      string
+	BaseURL    string
+	SidecarURL string
 }
 
 const (
@@ -144,9 +146,10 @@ func SetDefaultOutputDir(dir string) error {
 func GetAISettings() AISettings {
 	cfg, _ := LoadConfig()
 	return AISettings{
-		Provider: cfg.AIProvider,
-		Model:    cfg.AIModel,
-		BaseURL:  cfg.AIBaseURL,
+		Provider:   cfg.AIProvider,
+		Model:      cfg.AIModel,
+		BaseURL:    cfg.AIBaseURL,
+		SidecarURL: cfg.AISidecarURL,
 	}
 }
 
@@ -156,5 +159,6 @@ func SetAISettings(settings AISettings) error {
 	cfg.AIProvider = settings.Provider
 	cfg.AIModel = settings.Model
 	cfg.AIBaseURL = settings.BaseURL
+	cfg.AISidecarURL = settings.SidecarURL
 	return SaveConfig(cfg)
 }
