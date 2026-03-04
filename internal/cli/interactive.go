@@ -137,6 +137,7 @@ const (
 	menuActionResizeSingle   mainMenuAction = "resize-single"
 	menuActionResizeBatch    mainMenuAction = "resize-batch"
 	menuActionAudioNormalize mainMenuAction = "audio-normalize"
+	menuActionAIAssistant    mainMenuAction = "ai-assistant"
 	menuActionFormats        mainMenuAction = "formats"
 	menuActionDependencies   mainMenuAction = "dependencies"
 	menuActionSettings       mainMenuAction = "settings"
@@ -199,6 +200,15 @@ var topLevelSections = []mainMenuSection{
 		Desc:  "Ses normalize ve düzenleme",
 		Items: []mainMenuItem{
 			{Label: "Ses Normalize", Icon: "🔈", Desc: "Ses seviyesini EBU R128 standardına göre normalize et", Action: menuActionAudioNormalize},
+		},
+	},
+	{
+		ID:    "ai",
+		Label: "AI Asistan",
+		Icon:  "🤖",
+		Desc:  "Doğal dil ile otomatik işlem akışı",
+		Items: []mainMenuItem{
+			{Label: "AI ile Devam Et", Icon: "💬", Desc: "Komutlarını doğal dilde ver, işlemleri otomatik planla", Action: menuActionAIAssistant},
 		},
 	},
 	{
@@ -302,6 +312,12 @@ const (
 	stateAudioNormalizeLUFS
 	stateAudioNormalizeTP
 	stateAudioNormalizeLRA
+	stateAIIntro
+	stateAIAuthProviderSelect
+	stateAIAuthInput
+	stateAIChat
+	stateAICommandInput
+	stateAIExecuting
 )
 
 // ========================================
@@ -466,6 +482,19 @@ type interactiveModel struct {
 	normalizeLUFSInput string
 	normalizeTPInput   string
 	normalizeLRAInput  string
+
+	// AI mode
+	aiProvider      string
+	aiModel         string
+	aiBaseURL       string
+	aiSidecarURL    string
+	aiSessionID     string
+	aiSessionReady  bool
+	aiStatusMessage string
+	aiPromptInput   string
+	aiAPIKeyInput   string
+	aiAPIKey        string
+	aiCurrentFile   string
 }
 
 type browserEntry struct {
@@ -512,6 +541,7 @@ func newInteractiveModel(deps []converter.ExternalTool, firstRun bool) interacti
 	homeDir := getHomeDir()
 	defaults := loadInteractiveDefaults()
 	mainChoices, mainIcons, mainDescs := topLevelMenuChoices()
+	aiSettings := config.GetAISettings()
 
 	initialState := stateMainMenu
 	if firstRun {
@@ -526,6 +556,24 @@ func newInteractiveModel(deps []converter.ExternalTool, firstRun bool) interacti
 	if selectedOutput == "" {
 		selectedOutput = filepath.Join(homeDir, "Desktop")
 	}
+
+	aiProvider := normalizeAIProvider(aiSettings.Provider)
+	if aiProvider == "" {
+		aiProvider = aiProviderOpenAICompatible
+	}
+	aiModel := strings.TrimSpace(aiSettings.Model)
+	if aiModel == "" {
+		aiModel = defaultAIModel(aiProvider)
+	}
+	aiBaseURL := strings.TrimSpace(aiSettings.BaseURL)
+	if aiBaseURL == "" {
+		aiBaseURL = defaultAIBaseURL(aiProvider)
+	}
+	aiSidecarURL := strings.TrimSpace(os.Getenv("DOCUFY_AI_SIDECAR_URL"))
+	if aiSidecarURL == "" {
+		aiSidecarURL = strings.TrimSpace(aiSettings.SidecarURL)
+	}
+	aiSidecarURL = normalizeAISidecarURL(aiSidecarURL)
 
 	return interactiveModel{
 		state:             initialState,
@@ -553,6 +601,10 @@ func newInteractiveModel(deps []converter.ExternalTool, firstRun bool) interacti
 		resizeModeName:    "pad",
 		resizeUnit:        "px",
 		resizeDPIInput:    "96",
+		aiProvider:        aiProvider,
+		aiModel:           aiModel,
+		aiBaseURL:         aiBaseURL,
+		aiSidecarURL:      aiSidecarURL,
 	}
 }
 
@@ -652,7 +704,7 @@ func (m interactiveModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		var watchCmd tea.Cmd
 
 		// Spinner animasyonu
-		if m.state == stateConverting || m.state == stateBatchConverting || m.state == stateWelcomeInstalling || m.state == stateMissingDepInstalling || (m.state == stateWatching && m.watchProcessing) {
+		if m.state == stateConverting || m.state == stateBatchConverting || m.state == stateWelcomeInstalling || m.state == stateMissingDepInstalling || m.state == stateAIExecuting || (m.state == stateWatching && m.watchProcessing) {
 			m.spinnerTick++
 			m.spinnerIdx = m.spinnerTick % len(spinnerFrames)
 			// Progress bar pulsing efekti
@@ -800,6 +852,19 @@ func (m interactiveModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 
+	case aiToolDoneMsg:
+		m.state = stateAIChat
+		if msg.currentFile != "" {
+			m.aiCurrentFile = msg.currentFile
+		}
+		if msg.err != nil {
+			m.aiStatusMessage = "Hata: " + msg.err.Error()
+		} else {
+			m.aiStatusMessage = msg.resultText
+		}
+		m.cursor = 0
+		return m, nil
+
 	case tea.KeyMsg:
 		// Karşılama ekranında "q" çıkmaya yönlendirmesin
 		if m.state == stateWelcomeIntro || m.state == stateWelcomeDeps || m.state == stateWelcomeInstalling {
@@ -822,7 +887,7 @@ func (m interactiveModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 
-		if m.isResizeTextInputState() || m.isVideoTrimTextInputState() || m.isSprint2TextInputState() {
+		if m.isResizeTextInputState() || m.isVideoTrimTextInputState() || m.isSprint2TextInputState() || m.isAITextInputState() {
 			switch msg.String() {
 			case "ctrl+c":
 				m.quitting = true
@@ -840,6 +905,8 @@ func (m interactiveModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.popVideoTrimInput()
 				} else if m.isSprint2TextInputState() {
 					m.popSprint2Input()
+				} else if m.isAITextInputState() {
+					m.popAIInput()
 				}
 				return m, nil
 			default:
@@ -850,6 +917,9 @@ func (m interactiveModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					return m, nil
 				}
 				if m.isSprint2TextInputState() && m.appendSprint2Input(msg.String()) {
+					return m, nil
+				}
+				if m.isAITextInputState() && m.appendAIInput(msg.String()) {
 					return m, nil
 				}
 				return m, nil
@@ -1164,6 +1234,18 @@ func (m interactiveModel) View() string {
 		return m.viewAudioNormalizeTP()
 	case stateAudioNormalizeLRA:
 		return m.viewAudioNormalizeLRA()
+	case stateAIIntro:
+		return m.viewAIIntro()
+	case stateAIAuthProviderSelect:
+		return m.viewAIAuthProviderSelect()
+	case stateAIAuthInput:
+		return m.viewAIAuthInput()
+	case stateAIChat:
+		return m.viewAIChat()
+	case stateAICommandInput:
+		return m.viewAICommandInput()
+	case stateAIExecuting:
+		return m.viewAIExecuting()
 	default:
 		return ""
 	}
@@ -1290,6 +1372,133 @@ func (m interactiveModel) viewMainSectionMenu() string {
 	b.WriteString("\n")
 	b.WriteString("\n")
 	b.WriteString(dimStyle.Render("  ↑↓ Gezin  •  Enter Seç  •  Esc Ana Menü"))
+	b.WriteString("\n")
+	return b.String()
+}
+
+func (m interactiveModel) viewAIIntro() string {
+	var b strings.Builder
+
+	b.WriteString("\n")
+	b.WriteString(menuTitleStyle.Render(" ◆ 🤖 AI Asistan "))
+	b.WriteString("\n\n")
+
+	status := warningColor
+	statusText := "Bağlı Değil"
+	if m.aiSessionReady {
+		status = accentColor
+		statusText = "Hazır"
+	}
+
+	infoCard := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(primaryColor).
+		Padding(0, 1).
+		MarginLeft(1)
+
+	info := fmt.Sprintf(
+		"%s\n%s\n%s\n%s\n%s",
+		lipgloss.NewStyle().Bold(true).Foreground(status).Render("Durum: "+statusText),
+		dimStyle.Render("Provider: "+aiProviderLabel(m.aiProvider)),
+		dimStyle.Render("Model: "+m.aiModel),
+		dimStyle.Render("Base URL: "+displayAIBaseURL(m.aiBaseURL)),
+		dimStyle.Render("Çalışma Modu: "+aiRuntimeLabel(m.aiSidecarURL)),
+	)
+	b.WriteString(infoCard.Render(info))
+	b.WriteString("\n\n")
+
+	if strings.TrimSpace(m.aiStatusMessage) != "" {
+		b.WriteString(infoStyle.Render("  " + m.aiStatusMessage))
+		b.WriteString("\n\n")
+	}
+
+	for i, choice := range m.choices {
+		icon := ""
+		if i < len(m.choiceIcons) {
+			icon = m.choiceIcons[i]
+		}
+		desc := ""
+		if i < len(m.choiceDescs) {
+			desc = m.choiceDescs[i]
+		}
+		label := menuLine(icon, choice)
+		if i == m.cursor {
+			b.WriteString(selectedItemStyle.Render("▸ " + label))
+			b.WriteString("\n")
+			if desc != "" {
+				b.WriteString(lipgloss.NewStyle().PaddingLeft(6).Foreground(dimTextColor).Italic(true).Render(desc))
+				b.WriteString("\n")
+			}
+		} else {
+			b.WriteString(normalItemStyle.Render("  " + label))
+			b.WriteString("\n")
+		}
+	}
+
+	b.WriteString("\n")
+	b.WriteString(dimStyle.Render("  ↑↓ Gezin  •  Enter Seç  •  Esc Geri"))
+	b.WriteString("\n")
+	return b.String()
+}
+
+func (m interactiveModel) viewAIChat() string {
+	var b strings.Builder
+
+	b.WriteString("\n")
+	b.WriteString(menuTitleStyle.Render(" ◆ 💬 AI Sohbet "))
+	b.WriteString("\n\n")
+
+	hintCard := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(primaryColor).
+		Padding(0, 1).
+		MarginLeft(1)
+
+	hints := []string{
+		"Örnek komutlar:",
+		`- "/dosya /tam/yol/video.mp4"`,
+		`- "Bu videonun 20 ile 30. saniyesini klip olarak çıkar."`,
+		`- "Bu dosyayı webp'ye dönüştür, kalite 85 olsun."`,
+		`- "Bu videodan sesi al ve mp3 olarak ver."`,
+	}
+	b.WriteString(hintCard.Render(strings.Join(hints, "\n")))
+	b.WriteString("\n\n")
+
+	if strings.TrimSpace(m.aiCurrentFile) != "" {
+		b.WriteString(dimStyle.Render("  Aktif dosya: " + shortenPath(m.aiCurrentFile)))
+		b.WriteString("\n\n")
+	}
+
+	if strings.TrimSpace(m.aiStatusMessage) != "" {
+		b.WriteString(infoStyle.Render("  " + m.aiStatusMessage))
+		b.WriteString("\n\n")
+	}
+
+	for i, choice := range m.choices {
+		icon := ""
+		if i < len(m.choiceIcons) {
+			icon = m.choiceIcons[i]
+		}
+		desc := ""
+		if i < len(m.choiceDescs) {
+			desc = m.choiceDescs[i]
+		}
+		label := menuLine(icon, choice)
+		if i == m.cursor {
+			b.WriteString(selectedItemStyle.Render("▸ " + label))
+			b.WriteString("\n")
+			if desc != "" {
+				b.WriteString(lipgloss.NewStyle().PaddingLeft(6).Foreground(dimTextColor).Italic(true).Render(desc))
+				b.WriteString("\n")
+			}
+		} else {
+			b.WriteString(normalItemStyle.Render("  " + label))
+			b.WriteString("\n")
+		}
+	}
+
+	b.WriteString("\n")
+	b.WriteString(dimStyle.Render("  ↑↓ Gezin  •  Enter Seç  •  Esc Geri  •  q Ana Menü"))
 	b.WriteString("\n")
 	return b.String()
 }
@@ -1807,6 +2016,8 @@ func (m interactiveModel) runMainMenuAction(action mainMenuAction) (interactiveM
 		return m.goToCategorySelect(false, true, false), nil
 	case menuActionResizeBatch:
 		return m.goToCategorySelect(true, true, false), nil
+	case menuActionAIAssistant:
+		return m.goToAIIntro(), nil
 	case menuActionFileInfo:
 		m.flowIsBatch = false
 		m.flowResizeOnly = false
@@ -1906,6 +2117,69 @@ func (m interactiveModel) handleEnter() (tea.Model, tea.Cmd) {
 		}
 		action := section.Items[m.cursor].Action
 		return m.runMainMenuAction(action)
+
+	case stateAIIntro:
+		switch m.cursor {
+		case 0:
+			return m.startAISession(), nil
+		case 1:
+			return m.goToAIAuthProviderSelect(), nil
+		case 2:
+			return m.goToMainMenu(), nil
+		default:
+			return m, nil
+		}
+
+	case stateAIAuthProviderSelect:
+		switch m.cursor {
+		case 0:
+			return m.applyAIProviderChoice(aiProviderOpenAI), nil
+		case 1:
+			return m.applyAIProviderChoice(aiProviderOpenAICompatible), nil
+		case 2:
+			return m.applyAIProviderChoice(aiProviderOllama), nil
+		case 3:
+			return m.goToAIIntro(), nil
+		default:
+			return m, nil
+		}
+
+	case stateAIAuthInput:
+		key := strings.TrimSpace(m.aiAPIKeyInput)
+		if key == "" {
+			m.aiStatusMessage = "API key boş olamaz."
+			return m, nil
+		}
+		m.aiAPIKey = key
+		m.aiAPIKeyInput = ""
+		return m.startAISession(), nil
+
+	case stateAIChat:
+		switch m.cursor {
+		case 0:
+			if !m.aiSessionReady {
+				m.aiStatusMessage = "Önce AI oturumunu başlatın."
+				return m.goToAIIntro(), nil
+			}
+			return m.goToAICommandInput(), nil
+		case 1:
+			m.aiStatusMessage = "Örnek: \"Bu videonun 20-30 saniyesini kırp ve mp4 olarak kaydet.\""
+			return m, nil
+		case 2:
+			return m.goToMainMenu(), nil
+		default:
+			return m, nil
+		}
+
+	case stateAICommandInput:
+		prompt := strings.TrimSpace(m.aiPromptInput)
+		if prompt == "" {
+			m.aiStatusMessage = "Komut boş olamaz."
+			return m.goToAIChat(), nil
+		}
+		m.aiStatusMessage = "AI komutu çalıştırılıyor..."
+		m.state = stateAIExecuting
+		return m, m.doAICommand(prompt)
 
 	case stateSelectCategory:
 		if m.cursor >= 0 && m.cursor < len(m.categoryIndices) {
@@ -2637,6 +2911,8 @@ func (m interactiveModel) goToMainMenu() interactiveModel {
 	m.trimActiveSegment = 0
 	m.trimValidationErr = ""
 	m.trimPreviewPlan = nil
+	m.aiPromptInput = ""
+	m.aiAPIKeyInput = ""
 	m.choices = mainChoices
 	m.choiceIcons = mainIcons
 	m.choiceDescs = mainDescs
@@ -2673,12 +2949,79 @@ func (m interactiveModel) goToMainSection(sectionID string) interactiveModel {
 	return m
 }
 
+func (m interactiveModel) goToAIIntro() interactiveModel {
+	m.state = stateAIIntro
+	m.cursor = 0
+	m.choices = []string{"AI Oturumunu Başlat", "Provider Ayarı", "Ana Menüye Dön"}
+	m.choiceIcons = []string{"▶️", "⚙️", "↩️"}
+	m.choiceDescs = []string{
+		"Provider ayarlarını kontrol edip AI chat oturumunu başlat",
+		"Provider seç ve varsayılan model/base URL ayarını uygula",
+		"Ana menüye dön",
+	}
+	return m
+}
+
+func (m interactiveModel) goToAIChat() interactiveModel {
+	m.state = stateAIChat
+	m.cursor = 0
+	m.aiPromptInput = ""
+	m.choices = []string{"Komut Yaz", "Örnek Komut Göster", "Ana Menüye Dön"}
+	m.choiceIcons = []string{"⌨️", "💡", "↩️"}
+	m.choiceDescs = []string{
+		"Doğal dil komutu girerek convert/trim/extract/info çalıştır",
+		"AI modunda kullanılabilecek doğal dil örneklerini göster",
+		"Ana menüye dön",
+	}
+	return m
+}
+
+func (m interactiveModel) goToAICommandInput() interactiveModel {
+	m.state = stateAICommandInput
+	m.cursor = 0
+	m.aiPromptInput = ""
+	return m
+}
+
+func (m interactiveModel) goToAIAuthProviderSelect() interactiveModel {
+	m.state = stateAIAuthProviderSelect
+	m.cursor = 0
+	m.choices = []string{"OpenAI", "OpenAI-compatible", "Ollama (Yerel)", "Geri"}
+	m.choiceIcons = []string{"🔐", "🔧", "🖥️", "↩️"}
+	m.choiceDescs = []string{
+		"OpenAI API ile çalış (API key gerekir)",
+		"OpenAI uyumlu endpoint (API key gerekir)",
+		"Yerel model endpoint'i (API key gerekmeyebilir)",
+		"AI giriş ekranına dön",
+	}
+	return m
+}
+
+func (m interactiveModel) goToAIAuthInput() interactiveModel {
+	m.state = stateAIAuthInput
+	m.cursor = 0
+	m.aiAPIKeyInput = ""
+	return m
+}
+
 func (m interactiveModel) goBack() interactiveModel {
 	switch m.state {
 	case stateSelectCategory:
 		return m.goToParentSection()
 	case stateMainSectionMenu:
 		return m.goToMainMenu()
+	case stateAIIntro:
+		return m.goToParentSection()
+	case stateAIAuthProviderSelect:
+		return m.goToAIIntro()
+	case stateAIAuthInput:
+		return m.goToAIIntro()
+	case stateAIChat:
+		return m.goToAIIntro()
+	case stateAICommandInput:
+		return m.goToAIChat()
+	case stateAIExecuting:
+		return m.goToAIChat()
 	case stateSelectSourceFormat:
 		return m.goToCategorySelect(false, m.flowResizeOnly, false)
 	case stateSelectTargetFormat:
