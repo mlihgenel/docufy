@@ -26,6 +26,10 @@ func NewGateway(policy Policy) *Gateway {
 	return &Gateway{policy: policy}
 }
 
+func (g *Gateway) ValidatePath(path string) (string, error) {
+	return g.policy.ValidatePath(path)
+}
+
 func (g *Gateway) ConvertFile(req ConvertFileRequest) (ToolResult, error) {
 	inputPath, err := g.policy.ValidatePath(req.InputPath)
 	if err != nil {
