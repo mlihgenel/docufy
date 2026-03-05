@@ -122,8 +122,11 @@ func TestExecuteAICommandTrimRemoveUsesRemoveMode(t *testing.T) {
 
 	gw := aigateway.NewGateway(aigateway.Policy{AllowedRoots: []string{root}})
 	_, _, err := executeAICommand(gw, "videoyu kırp ve 5 ile 7 saniyeyi sil", input)
-	if !errors.Is(err, aigateway.ErrNotImplemented) {
-		t.Fatalf("expected ErrNotImplemented for remove mode, got %v", err)
+	if err == nil {
+		t.Fatalf("expected execution error with fake media input")
+	}
+	if errors.Is(err, aigateway.ErrNotImplemented) {
+		t.Fatalf("did not expect ErrNotImplemented for remove mode, got %v", err)
 	}
 }
 
@@ -136,6 +139,18 @@ func TestParseAIFormatPairFromTo(t *testing.T) {
 	from, to = parseAIFormatPair("png'den webp'ye toplu dönüştür")
 	if from != "png" || to != "webp" {
 		t.Fatalf("unexpected tr format pair: from=%q to=%q", from, to)
+	}
+}
+
+func TestParseAIMetadataMode(t *testing.T) {
+	if got := parseAIMetadataMode("metadata temizle"); got != converter.MetadataStrip {
+		t.Fatalf("expected strip, got %q", got)
+	}
+	if got := parseAIMetadataMode("metadata koru"); got != converter.MetadataPreserve {
+		t.Fatalf("expected preserve, got %q", got)
+	}
+	if got := parseAIMetadataMode("normal dönüştür"); got != converter.MetadataAuto {
+		t.Fatalf("expected auto, got %q", got)
 	}
 }
 

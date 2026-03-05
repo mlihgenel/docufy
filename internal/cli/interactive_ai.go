@@ -739,6 +739,7 @@ func executeAICommand(gw *aigateway.Gateway, prompt string, currentFile string) 
 	lower := strings.ToLower(trimmed)
 	onConflict := parseAIOnConflictPolicy(trimmed)
 	trimMode := parseAITrimMode(trimmed)
+	metadataMode := parseAIMetadataMode(trimmed)
 
 	if strings.HasPrefix(lower, "/dosya ") || strings.HasPrefix(lower, "/file ") {
 		path := strings.TrimSpace(trimmed[strings.Index(trimmed, " "):])
@@ -821,7 +822,7 @@ func executeAICommand(gw *aigateway.Gateway, prompt string, currentFile string) 
 			To:           target,
 			Codec:        "auto",
 			Quality:      0,
-			MetadataMode: converter.MetadataAuto,
+			MetadataMode: metadataMode,
 			OnConflict:   onConflict,
 		})
 		if err != nil {
@@ -839,7 +840,7 @@ func executeAICommand(gw *aigateway.Gateway, prompt string, currentFile string) 
 			InputPath:    inputPath,
 			To:           target,
 			Copy:         copyMode,
-			MetadataMode: converter.MetadataAuto,
+			MetadataMode: metadataMode,
 			OnConflict:   onConflict,
 		})
 		if err != nil {
@@ -866,7 +867,7 @@ func executeAICommand(gw *aigateway.Gateway, prompt string, currentFile string) 
 			InputPath:    inputPath,
 			To:           target,
 			Quality:      0,
-			MetadataMode: converter.MetadataAuto,
+			MetadataMode: metadataMode,
 			OnConflict:   onConflict,
 		})
 		if err != nil {
