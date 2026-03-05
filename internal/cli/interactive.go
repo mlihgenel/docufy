@@ -318,6 +318,7 @@ const (
 	stateAIChat
 	stateAICommandInput
 	stateAIPlanConfirm
+	stateAIRiskConfirmInput
 	stateAIExecuting
 	stateAIDone
 )
@@ -500,6 +501,8 @@ type interactiveModel struct {
 	aiPendingPrompt string
 	aiPendingPlan   string
 	aiPendingRisks  []string
+	aiNeedsRiskAck  bool
+	aiRiskAckInput  string
 	aiLastResult    string
 	aiError         string
 }
@@ -1257,6 +1260,8 @@ func (m interactiveModel) View() string {
 		return m.viewAICommandInput()
 	case stateAIPlanConfirm:
 		return m.viewAIPlanConfirm()
+	case stateAIRiskConfirmInput:
+		return m.viewAIRiskConfirmInput()
 	case stateAIExecuting:
 		return m.viewAIExecuting()
 	case stateAIDone:
@@ -2167,7 +2172,16 @@ func (m interactiveModel) handleEnter() (tea.Model, tea.Cmd) {
 		}
 		m.aiAPIKey = key
 		m.aiAPIKeyInput = ""
-		return m.startAISession(), nil
+		saveWarning := persistAIAPIKey(m.aiProvider, key)
+		next := m.startAISession()
+		if strings.TrimSpace(saveWarning) != "" {
+			if strings.TrimSpace(next.aiStatusMessage) != "" {
+				next.aiStatusMessage = saveWarning + " • " + next.aiStatusMessage
+			} else {
+				next.aiStatusMessage = saveWarning
+			}
+		}
+		return next, nil
 
 	case stateAIChat:
 		switch m.cursor {
@@ -2194,6 +2208,8 @@ func (m interactiveModel) handleEnter() (tea.Model, tea.Cmd) {
 		}
 		m.aiPendingPrompt = prompt
 		m.aiPendingPlan, m.aiPendingRisks = m.buildAIPlan(prompt)
+		m.aiNeedsRiskAck = aiNeedsHighRiskAck(prompt)
+		m.aiRiskAckInput = ""
 		m.aiStatusMessage = "AI planı hazır. Onay verirseniz komut çalıştırılacak."
 		return m.goToAIPlanConfirm(), nil
 
@@ -2203,6 +2219,10 @@ func (m interactiveModel) handleEnter() (tea.Model, tea.Cmd) {
 			if strings.TrimSpace(m.aiPendingPrompt) == "" {
 				m.aiStatusMessage = "Çalıştırılacak komut bulunamadı."
 				return m.goToAIChat(), nil
+			}
+			if m.aiNeedsRiskAck {
+				m.aiStatusMessage = `Riskli komut algılandı. Devam için "ONAY" yazın.`
+				return m.goToAIRiskConfirmInput(), nil
 			}
 			m.aiStatusMessage = "AI komutu çalıştırılıyor..."
 			m.state = stateAIExecuting
@@ -2218,6 +2238,16 @@ func (m interactiveModel) handleEnter() (tea.Model, tea.Cmd) {
 		default:
 			return m, nil
 		}
+
+	case stateAIRiskConfirmInput:
+		token := strings.ToUpper(strings.TrimSpace(m.aiRiskAckInput))
+		if token != "ONAY" {
+			m.aiStatusMessage = `Devam etmek için "ONAY" yazmalısın.`
+			return m, nil
+		}
+		m.aiStatusMessage = "AI komutu çalıştırılıyor..."
+		m.state = stateAIExecuting
+		return m, m.doAICommand(m.aiPendingPrompt)
 
 	case stateAIDone:
 		switch m.cursor {
@@ -3049,6 +3079,13 @@ func (m interactiveModel) goToAIPlanConfirm() interactiveModel {
 	return m
 }
 
+func (m interactiveModel) goToAIRiskConfirmInput() interactiveModel {
+	m.state = stateAIRiskConfirmInput
+	m.cursor = 0
+	m.aiRiskAckInput = ""
+	return m
+}
+
 func (m interactiveModel) goToAIAuthProviderSelect() interactiveModel {
 	m.state = stateAIAuthProviderSelect
 	m.cursor = 0
@@ -3087,6 +3124,8 @@ func (m *interactiveModel) clearAIPendingPlan() {
 	m.aiPendingPrompt = ""
 	m.aiPendingPlan = ""
 	m.aiPendingRisks = nil
+	m.aiNeedsRiskAck = false
+	m.aiRiskAckInput = ""
 }
 
 func (m interactiveModel) goBack() interactiveModel {
@@ -3109,6 +3148,8 @@ func (m interactiveModel) goBack() interactiveModel {
 		next := m.goToAICommandInput()
 		next.aiPromptInput = m.aiPendingPrompt
 		return next
+	case stateAIRiskConfirmInput:
+		return m.goToAIPlanConfirm()
 	case stateAIExecuting:
 		return m.goToAIChat()
 	case stateAIDone:
