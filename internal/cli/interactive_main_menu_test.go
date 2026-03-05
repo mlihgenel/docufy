@@ -82,7 +82,11 @@ func TestMainSectionActionAIAssistant(t *testing.T) {
 }
 
 func TestAIIntroTransitionRequiresAuthByDefault(t *testing.T) {
+	t.Setenv("DOCUFY_AI_API_KEY", "")
+	t.Setenv("OPENAI_API_KEY", "")
 	m := newInteractiveModel(nil, false).goToAIIntro()
+	m.aiProvider = aiProviderOpenAI
+	m.aiAPIKey = ""
 	m.cursor = 0
 
 	nextModel, cmd := m.handleEnter()
@@ -136,5 +140,50 @@ func TestAIIntroTransitionToProviderSettings(t *testing.T) {
 	}
 	if len(next.choices) == 0 || next.choices[0] != "OpenAI" {
 		t.Fatalf("unexpected provider choices: %+v", next.choices)
+	}
+}
+
+func TestAICommandInputTransitionsToPlanConfirm(t *testing.T) {
+	m := newInteractiveModel(nil, false)
+	m = m.goToAICommandInput()
+	m.aiCurrentFile = "/tmp/sample.mp4"
+	m.aiPromptInput = "Bu videoyu mp4 olarak dönüştür"
+
+	nextModel, cmd := m.handleEnter()
+	if cmd != nil {
+		t.Fatalf("expected no command before plan confirmation")
+	}
+	next, ok := nextModel.(interactiveModel)
+	if !ok {
+		t.Fatalf("unexpected model type")
+	}
+	if next.state != stateAIPlanConfirm {
+		t.Fatalf("expected stateAIPlanConfirm, got %v", next.state)
+	}
+	if next.aiPendingPrompt == "" {
+		t.Fatalf("expected pending prompt to be set")
+	}
+	if len(next.choices) == 0 || next.choices[0] != "Onayla ve Çalıştır" {
+		t.Fatalf("unexpected plan confirm choices: %+v", next.choices)
+	}
+}
+
+func TestAIPlanConfirmApproveStartsExecution(t *testing.T) {
+	m := newInteractiveModel(nil, false)
+	m = m.goToAIPlanConfirm()
+	m.aiPendingPrompt = "bilgi ver"
+	m.aiCurrentFile = "/tmp/sample.txt"
+	m.cursor = 0
+
+	nextModel, cmd := m.handleEnter()
+	if cmd == nil {
+		t.Fatalf("expected command execution cmd after confirmation")
+	}
+	next, ok := nextModel.(interactiveModel)
+	if !ok {
+		t.Fatalf("unexpected model type")
+	}
+	if next.state != stateAIExecuting {
+		t.Fatalf("expected stateAIExecuting, got %v", next.state)
 	}
 }

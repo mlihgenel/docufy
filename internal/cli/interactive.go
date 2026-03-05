@@ -317,7 +317,9 @@ const (
 	stateAIAuthInput
 	stateAIChat
 	stateAICommandInput
+	stateAIPlanConfirm
 	stateAIExecuting
+	stateAIDone
 )
 
 // ========================================
@@ -495,6 +497,11 @@ type interactiveModel struct {
 	aiAPIKeyInput   string
 	aiAPIKey        string
 	aiCurrentFile   string
+	aiPendingPrompt string
+	aiPendingPlan   string
+	aiPendingRisks  []string
+	aiLastResult    string
+	aiError         string
 }
 
 type browserEntry struct {
@@ -853,16 +860,20 @@ func (m interactiveModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case aiToolDoneMsg:
-		m.state = stateAIChat
+		m.clearAIPendingPlan()
 		if msg.currentFile != "" {
 			m.aiCurrentFile = msg.currentFile
 		}
 		if msg.err != nil {
+			m.aiError = msg.err.Error()
+			m.aiLastResult = ""
 			m.aiStatusMessage = "Hata: " + msg.err.Error()
 		} else {
+			m.aiError = ""
+			m.aiLastResult = msg.resultText
 			m.aiStatusMessage = msg.resultText
 		}
-		m.cursor = 0
+		m = m.goToAIDone()
 		return m, nil
 
 	case tea.KeyMsg:
@@ -1244,8 +1255,12 @@ func (m interactiveModel) View() string {
 		return m.viewAIChat()
 	case stateAICommandInput:
 		return m.viewAICommandInput()
+	case stateAIPlanConfirm:
+		return m.viewAIPlanConfirm()
 	case stateAIExecuting:
 		return m.viewAIExecuting()
+	case stateAIDone:
+		return m.viewAIDone()
 	default:
 		return ""
 	}
@@ -2177,9 +2192,45 @@ func (m interactiveModel) handleEnter() (tea.Model, tea.Cmd) {
 			m.aiStatusMessage = "Komut boş olamaz."
 			return m.goToAIChat(), nil
 		}
-		m.aiStatusMessage = "AI komutu çalıştırılıyor..."
-		m.state = stateAIExecuting
-		return m, m.doAICommand(prompt)
+		m.aiPendingPrompt = prompt
+		m.aiPendingPlan, m.aiPendingRisks = m.buildAIPlan(prompt)
+		m.aiStatusMessage = "AI planı hazır. Onay verirseniz komut çalıştırılacak."
+		return m.goToAIPlanConfirm(), nil
+
+	case stateAIPlanConfirm:
+		switch m.cursor {
+		case 0:
+			if strings.TrimSpace(m.aiPendingPrompt) == "" {
+				m.aiStatusMessage = "Çalıştırılacak komut bulunamadı."
+				return m.goToAIChat(), nil
+			}
+			m.aiStatusMessage = "AI komutu çalıştırılıyor..."
+			m.state = stateAIExecuting
+			return m, m.doAICommand(m.aiPendingPrompt)
+		case 1:
+			next := m.goToAICommandInput()
+			next.aiPromptInput = m.aiPendingPrompt
+			return next, nil
+		case 2:
+			m.clearAIPendingPlan()
+			m.aiStatusMessage = "AI komutu iptal edildi."
+			return m.goToAIChat(), nil
+		default:
+			return m, nil
+		}
+
+	case stateAIDone:
+		switch m.cursor {
+		case 0:
+			m.aiPromptInput = ""
+			return m.goToAICommandInput(), nil
+		case 1:
+			return m.goToAIChat(), nil
+		case 2:
+			return m.goToMainMenu(), nil
+		default:
+			return m, nil
+		}
 
 	case stateSelectCategory:
 		if m.cursor >= 0 && m.cursor < len(m.categoryIndices) {
@@ -2950,6 +3001,7 @@ func (m interactiveModel) goToMainSection(sectionID string) interactiveModel {
 }
 
 func (m interactiveModel) goToAIIntro() interactiveModel {
+	m.clearAIPendingPlan()
 	m.state = stateAIIntro
 	m.cursor = 0
 	m.choices = []string{"AI Oturumunu Başlat", "Provider Ayarı", "Ana Menüye Dön"}
@@ -2963,6 +3015,7 @@ func (m interactiveModel) goToAIIntro() interactiveModel {
 }
 
 func (m interactiveModel) goToAIChat() interactiveModel {
+	m.clearAIPendingPlan()
 	m.state = stateAIChat
 	m.cursor = 0
 	m.aiPromptInput = ""
@@ -2980,6 +3033,19 @@ func (m interactiveModel) goToAICommandInput() interactiveModel {
 	m.state = stateAICommandInput
 	m.cursor = 0
 	m.aiPromptInput = ""
+	return m
+}
+
+func (m interactiveModel) goToAIPlanConfirm() interactiveModel {
+	m.state = stateAIPlanConfirm
+	m.cursor = 0
+	m.choices = []string{"Onayla ve Çalıştır", "Komutu Düzenle", "İptal Et"}
+	m.choiceIcons = []string{"✅", "✍️", "↩️"}
+	m.choiceDescs = []string{
+		"Planı onayla ve AI komutunu çalıştır",
+		"Komutu düzenleme ekranına geri dön",
+		"Komutu iptal edip sohbet ekranına dön",
+	}
 	return m
 }
 
@@ -3004,6 +3070,25 @@ func (m interactiveModel) goToAIAuthInput() interactiveModel {
 	return m
 }
 
+func (m interactiveModel) goToAIDone() interactiveModel {
+	m.state = stateAIDone
+	m.cursor = 0
+	m.choices = []string{"Yeni Komut Yaz", "Sohbete Dön", "Ana Menüye Dön"}
+	m.choiceIcons = []string{"⌨️", "💬", "↩️"}
+	m.choiceDescs = []string{
+		"Aynı oturumda yeni bir komut çalıştır",
+		"AI sohbet menüsüne geri dön",
+		"Ana menüye çık",
+	}
+	return m
+}
+
+func (m *interactiveModel) clearAIPendingPlan() {
+	m.aiPendingPrompt = ""
+	m.aiPendingPlan = ""
+	m.aiPendingRisks = nil
+}
+
 func (m interactiveModel) goBack() interactiveModel {
 	switch m.state {
 	case stateSelectCategory:
@@ -3020,7 +3105,13 @@ func (m interactiveModel) goBack() interactiveModel {
 		return m.goToAIIntro()
 	case stateAICommandInput:
 		return m.goToAIChat()
+	case stateAIPlanConfirm:
+		next := m.goToAICommandInput()
+		next.aiPromptInput = m.aiPendingPrompt
+		return next
 	case stateAIExecuting:
+		return m.goToAIChat()
+	case stateAIDone:
 		return m.goToAIChat()
 	case stateSelectSourceFormat:
 		return m.goToCategorySelect(false, m.flowResizeOnly, false)

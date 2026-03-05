@@ -2,6 +2,7 @@ package cli
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -105,6 +106,131 @@ func (m interactiveModel) viewAICommandInput() string {
 	b.WriteString(pathStyle.Render("  > " + input + cursor))
 	b.WriteString("\n\n")
 	b.WriteString(dimStyle.Render("  Enter Çalıştır  •  Esc Geri  •  Backspace Sil"))
+	b.WriteString("\n")
+	return b.String()
+}
+
+func (m interactiveModel) viewAIPlanConfirm() string {
+	var b strings.Builder
+
+	b.WriteString("\n")
+	b.WriteString(menuTitleStyle.Render(" ◆ 🧠 AI Plan Onayı "))
+	b.WriteString("\n\n")
+
+	if strings.TrimSpace(m.aiPendingPrompt) != "" {
+		b.WriteString(infoStyle.Render("  Komut: " + m.aiPendingPrompt))
+		b.WriteString("\n\n")
+	}
+
+	planText := strings.TrimSpace(m.aiPendingPlan)
+	if planText == "" {
+		planText = "Komut yorumlanacak ve uygun tool çağrısı yapılacak."
+	}
+
+	planCard := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(primaryColor).
+		Padding(0, 1).
+		MarginLeft(1)
+	b.WriteString(planCard.Render("Plan:\n" + planText))
+	b.WriteString("\n\n")
+
+	if len(m.aiPendingRisks) > 0 {
+		riskLines := make([]string, 0, len(m.aiPendingRisks)+1)
+		riskLines = append(riskLines, "Risk Notları:")
+		for _, risk := range m.aiPendingRisks {
+			riskLines = append(riskLines, "- "+risk)
+		}
+		riskCard := lipgloss.NewStyle().
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(warningColor).
+			Foreground(warningColor).
+			Padding(0, 1).
+			MarginLeft(1)
+		b.WriteString(riskCard.Render(strings.Join(riskLines, "\n")))
+		b.WriteString("\n\n")
+	}
+
+	for i, choice := range m.choices {
+		icon := ""
+		if i < len(m.choiceIcons) {
+			icon = m.choiceIcons[i]
+		}
+		desc := ""
+		if i < len(m.choiceDescs) {
+			desc = m.choiceDescs[i]
+		}
+		label := menuLine(icon, choice)
+		if i == m.cursor {
+			b.WriteString(selectedItemStyle.Render("▸ " + label))
+			b.WriteString("\n")
+			if desc != "" {
+				b.WriteString(lipgloss.NewStyle().PaddingLeft(6).Foreground(dimTextColor).Italic(true).Render(desc))
+				b.WriteString("\n")
+			}
+		} else {
+			b.WriteString(normalItemStyle.Render("  " + label))
+			b.WriteString("\n")
+		}
+	}
+
+	b.WriteString("\n")
+	b.WriteString(dimStyle.Render("  ↑↓ Gezin  •  Enter Seç  •  Esc Komutu Düzenle"))
+	b.WriteString("\n")
+	return b.String()
+}
+
+func (m interactiveModel) viewAIDone() string {
+	var b strings.Builder
+
+	b.WriteString("\n")
+	b.WriteString(menuTitleStyle.Render(" ◆ ✅ AI Sonucu "))
+	b.WriteString("\n\n")
+
+	card := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(primaryColor).
+		Padding(0, 1).
+		MarginLeft(1)
+
+	body := strings.TrimSpace(m.aiLastResult)
+	if strings.TrimSpace(m.aiError) != "" {
+		body = "Hata: " + m.aiError
+	}
+	if body == "" {
+		body = strings.TrimSpace(m.aiStatusMessage)
+	}
+	if body == "" {
+		body = "AI komutu tamamlandı."
+	}
+	b.WriteString(card.Render(body))
+	b.WriteString("\n\n")
+
+	for i, choice := range m.choices {
+		icon := ""
+		if i < len(m.choiceIcons) {
+			icon = m.choiceIcons[i]
+		}
+		desc := ""
+		if i < len(m.choiceDescs) {
+			desc = m.choiceDescs[i]
+		}
+		label := menuLine(icon, choice)
+		if i == m.cursor {
+			b.WriteString(selectedItemStyle.Render("▸ " + label))
+			b.WriteString("\n")
+			if desc != "" {
+				b.WriteString(lipgloss.NewStyle().PaddingLeft(6).Foreground(dimTextColor).Italic(true).Render(desc))
+				b.WriteString("\n")
+			}
+		} else {
+			b.WriteString(normalItemStyle.Render("  " + label))
+			b.WriteString("\n")
+		}
+	}
+
+	b.WriteString("\n")
+	b.WriteString(dimStyle.Render("  ↑↓ Gezin  •  Enter Seç  •  Esc Sohbet"))
 	b.WriteString("\n")
 	return b.String()
 }
@@ -373,6 +499,7 @@ func (m interactiveModel) doAICommand(prompt string) tea.Cmd {
 				if resultText == "" {
 					resultText = "AI komutu tamamlandı."
 				}
+				m.writeAIAuditLog("sidecar", prompt, currentFile, "success", resultText, "")
 				return aiToolDoneMsg{
 					resultText:  resultText,
 					currentFile: currentFile,
@@ -383,10 +510,12 @@ func (m interactiveModel) doAICommand(prompt string) tea.Cmd {
 			gw := aigateway.NewGateway(m.aiPolicy())
 			resultText, currentFile, localErr := executeAICommand(gw, prompt, m.aiCurrentFile)
 			if localErr != nil {
+				m.writeAIAuditLog("sidecar+local", prompt, m.aiCurrentFile, "failed", "", fmt.Sprintf("sidecar: %v; local: %v", err, localErr))
 				return aiToolDoneMsg{
 					err: fmt.Errorf("sidecar hatası: %v; local hata: %w", err, localErr),
 				}
 			}
+			m.writeAIAuditLog("sidecar+local", prompt, currentFile, "success", resultText, fmt.Sprintf("sidecar: %v", err))
 			return aiToolDoneMsg{
 				resultText:  fmt.Sprintf("Sidecar erişilemedi (%v). Yerel gateway ile devam edildi. %s", err, resultText),
 				currentFile: currentFile,
@@ -396,6 +525,11 @@ func (m interactiveModel) doAICommand(prompt string) tea.Cmd {
 
 		gw := aigateway.NewGateway(m.aiPolicy())
 		resultText, currentFile, err := executeAICommand(gw, prompt, m.aiCurrentFile)
+		if err != nil {
+			m.writeAIAuditLog("local", prompt, m.aiCurrentFile, "failed", "", err.Error())
+		} else {
+			m.writeAIAuditLog("local", prompt, currentFile, "success", resultText, "")
+		}
 		return aiToolDoneMsg{
 			resultText:  resultText,
 			currentFile: currentFile,
@@ -443,6 +577,59 @@ func uniqueStrings(values []string) []string {
 		result = append(result, v)
 	}
 	return result
+}
+
+func (m interactiveModel) buildAIPlan(prompt string) (string, []string) {
+	trimmed := strings.TrimSpace(prompt)
+	lower := strings.ToLower(trimmed)
+	steps := make([]string, 0, 4)
+	risks := make([]string, 0, 3)
+
+	if strings.HasPrefix(lower, "/dosya ") || strings.HasPrefix(lower, "/file ") {
+		steps = append(steps, "Aktif dosya güncellenecek ve doğrulama için get_file_info çağrılacak.")
+	} else {
+		switch {
+		case isAITrimCommand(lower):
+			startSec, endSec, err := parseTrimSecondRange(lower)
+			if err == nil {
+				steps = append(steps, fmt.Sprintf("trim_video aracı clip modunda %d-%d saniye aralığı ile çalıştırılacak.", startSec, endSec))
+			} else {
+				steps = append(steps, "trim_video aracı ile kırpma denenecek (zaman aralığı doğrulanacak).")
+			}
+		case isAIExtractAudioCommand(lower):
+			target := parseAudioTargetFormat(trimmed)
+			if target == "" {
+				target = "mp3"
+			}
+			steps = append(steps, fmt.Sprintf("extract_audio aracı %s formatında çalıştırılacak.", target))
+		case isAIInfoCommand(lower):
+			steps = append(steps, "get_file_info aracı ile medya bilgileri alınacak.")
+		case isAIConvertCommand(lower):
+			target := parseTargetFormat(trimmed)
+			if target == "" {
+				steps = append(steps, "convert_file aracı ile dönüştürme denenecek (hedef format komuttan çözümlenecek).")
+			} else {
+				steps = append(steps, fmt.Sprintf("convert_file aracı %s formatına dönüştürmek için çalıştırılacak.", target))
+			}
+		default:
+			steps = append(steps, "Komut yorumlanacak; desteklenen bir işlemse ilgili tool çağrılacak.")
+		}
+	}
+
+	if strings.TrimSpace(m.aiCurrentFile) == "" && parseQuotedPath(trimmed) == "" && parseExistingPathToken(trimmed) == "" && !strings.HasPrefix(lower, "/dosya ") && !strings.HasPrefix(lower, "/file ") {
+		risks = append(risks, "Aktif dosya belirtilmemiş görünüyor; önce /dosya <yol> vermen gerekebilir.")
+	}
+	if strings.Contains(lower, "overwrite") || strings.Contains(lower, "uzerine") || strings.Contains(lower, "üzerine") {
+		risks = append(risks, "Üzerine yazma talebi tespit edildi.")
+	}
+	if strings.Contains(lower, "remove") || strings.Contains(lower, "sil") {
+		risks = append(risks, "Silme/remove isteği tespit edildi. Desteklenmeyen modlar güvenli şekilde reddedilir.")
+	}
+	if strings.Contains(lower, "batch") || strings.Contains(lower, "toplu") || strings.Contains(lower, "watch") || strings.Contains(lower, "izle") {
+		risks = append(risks, "Toplu/watch akışı istendi; AI modunda adım adım doğrulama gerekebilir.")
+	}
+
+	return strings.Join(steps, "\n"), uniqueStrings(risks)
 }
 
 func executeAICommand(gw *aigateway.Gateway, prompt string, currentFile string) (string, string, error) {
@@ -696,4 +883,55 @@ func parseTargetFormat(prompt string) string {
 		}
 	}
 	return ""
+}
+
+type aiAuditLogRecord struct {
+	Timestamp   string `json:"timestamp"`
+	Provider    string `json:"provider"`
+	Model       string `json:"model"`
+	Runtime     string `json:"runtime"`
+	Mode        string `json:"mode"`
+	Prompt      string `json:"prompt"`
+	CurrentFile string `json:"current_file,omitempty"`
+	Status      string `json:"status"`
+	Result      string `json:"result,omitempty"`
+	Error       string `json:"error,omitempty"`
+}
+
+func (m interactiveModel) writeAIAuditLog(mode string, prompt string, currentFile string, status string, result string, errText string) {
+	home, err := os.UserHomeDir()
+	if err != nil || strings.TrimSpace(home) == "" {
+		return
+	}
+	dir := filepath.Join(home, ".docufy")
+	if mkErr := os.MkdirAll(dir, 0755); mkErr != nil {
+		return
+	}
+
+	record := aiAuditLogRecord{
+		Timestamp:   time.Now().UTC().Format(time.RFC3339),
+		Provider:    m.aiProvider,
+		Model:       m.aiModel,
+		Runtime:     aiRuntimeLabel(m.aiSidecarURL),
+		Mode:        mode,
+		Prompt:      strings.TrimSpace(prompt),
+		CurrentFile: strings.TrimSpace(currentFile),
+		Status:      status,
+		Result:      strings.TrimSpace(result),
+		Error:       strings.TrimSpace(errText),
+	}
+
+	payload, marshalErr := json.Marshal(record)
+	if marshalErr != nil {
+		return
+	}
+
+	file := filepath.Join(dir, "ai_audit.log")
+	f, openErr := os.OpenFile(file, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+	if openErr != nil {
+		return
+	}
+	defer f.Close()
+
+	_, _ = f.Write(append(payload, '\n'))
 }
