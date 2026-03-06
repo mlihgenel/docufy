@@ -28,6 +28,13 @@ var formatsCmd = &cobra.Command{
 	Short: "Desteklenen formatları ve dönüşümleri listele",
 	Long: `Tüm desteklenen dosya formatlarını ve aralarındaki dönüşüm yollarını gösterir.
 
+Bağımlılık notları:
+  - md -> pdf: Pandoc -> LibreOffice -> dahili Go renderer (harici araç zorunlu değil)
+  - html -> pdf: LibreOffice -> dahili Go renderer (harici araç zorunlu değil)
+  - docx -> pdf: LibreOffice -> metin tabanlı fallback (kalite için LibreOffice önerilir)
+  - ses/video dönüşümleri: FFmpeg zorunlu
+  - csv -> xlsx: LibreOffice zorunlu
+
 Örnekler:
   docufy formats
   docufy formats --from pdf

@@ -545,6 +545,22 @@ docufy formats
 
 Uygulama interaktif modda eksik araçları kontrol eder ve kurulum için yönlendirir.
 
+### Dönüşüm Yoluna Göre Zorunluluk
+
+| Dönüşüm yolu | Öncelik sırası | Zorunlu araç |
+|---|---|---|
+| `md -> pdf` | `Pandoc -> LibreOffice -> Dahili Go renderer` | Zorunlu değil (harici araçsız da çalışır) |
+| `html -> pdf` | `LibreOffice -> Dahili Go renderer` | Zorunlu değil (harici araçsız da çalışır) |
+| `docx -> pdf` | `LibreOffice -> Metin tabanlı fallback` | Zorunlu değil (kalite için önerilir) |
+| Ses/Video dönüşümleri | `FFmpeg` | Evet (`FFmpeg` zorunlu) |
+| `csv -> xlsx` | `LibreOffice` | Evet (`LibreOffice` zorunlu) |
+| Bazı `odt/rtf` hedefli ofis dönüşümleri | `LibreOffice` | Çoğu akışta zorunlu |
+
+Notlar:
+- `Windows`, `macOS` ve `Linux` üzerinde temel kurulum çalışır.
+- Harici araçlar kurulmazsa sadece ilgili dönüşüm akışları etkilenir; tüm uygulama devre dışı kalmaz.
+- En yüksek belge çıktı kalitesi için `md -> pdf` tarafında `Pandoc` (ve uygun PDF engine), ofis belgelerinde ise `LibreOffice` önerilir.
+
 ## Yapılandırma
 
 - Konfigürasyon dosyası: `~/.docufy/config.json`

@@ -1272,7 +1272,36 @@ func transliterateToLatin(s string) string {
 		"ş", "s", "Ş", "S",
 		"ü", "u", "Ü", "U",
 	)
-	return replacer.Replace(s)
+	s = replacer.Replace(s)
+
+	var b strings.Builder
+	for _, r := range s {
+		if isEmojiRune(r) {
+			b.WriteString(fmt.Sprintf("[emoji U+%04X]", r))
+			continue
+		}
+		b.WriteRune(r)
+	}
+	return b.String()
+}
+
+// isEmojiRune, yaygın Unicode emoji aralıklarını basit şekilde tespit eder.
+func isEmojiRune(r rune) bool {
+	switch {
+	case r >= 0x1F300 && r <= 0x1FAFF:
+		return true
+	case r >= 0x1F1E6 && r <= 0x1F1FF:
+		return true
+	case r >= 0x2600 && r <= 0x26FF:
+		return true
+	case r >= 0x2700 && r <= 0x27BF:
+		return true
+	case r >= 0xFE00 && r <= 0xFE0F:
+		return true
+	case r >= 0xE0020 && r <= 0xE007F:
+		return true
+	}
+	return false
 }
 
 // createSimpleDocx Office Open XML formatında minimal bir DOCX dosyası oluşturur
