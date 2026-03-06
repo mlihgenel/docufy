@@ -23,7 +23,7 @@ func TestConvertFileRequiresTo(t *testing.T) {
 	}
 }
 
-func TestTrimVideoRemoveNoLongerNotImplemented(t *testing.T) {
+func TestTrimVideoRemoveIsNotImplemented(t *testing.T) {
 	root := t.TempDir()
 	input := filepath.Join(root, "sample.mp4")
 	if err := os.WriteFile(input, []byte("fake"), 0644); err != nil {
@@ -34,17 +34,14 @@ func TestTrimVideoRemoveNoLongerNotImplemented(t *testing.T) {
 	result, err := gw.TrimVideo(TrimVideoRequest{
 		InputPath: input,
 		Mode:      "remove",
-		Start:     "5",
-		End:       "2",
+		Start:     "0",
+		Duration:  "2",
 	})
-	if err == nil {
-		t.Fatalf("expected validation error for invalid remove range")
+	if !errors.Is(err, ErrNotImplemented) {
+		t.Fatalf("expected ErrNotImplemented, got %v", err)
 	}
-	if errors.Is(err, ErrNotImplemented) {
-		t.Fatalf("did not expect ErrNotImplemented")
-	}
-	if result.Status == StatusNotImplemented {
-		t.Fatalf("did not expect status %s", StatusNotImplemented)
+	if result.Status != StatusNotImplemented {
+		t.Fatalf("expected status %s, got %s", StatusNotImplemented, result.Status)
 	}
 }
 
