@@ -13,6 +13,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/mlihgenel/docufy/v2/internal/converter"
+	"github.com/mlihgenel/docufy/v2/internal/profile"
 	"github.com/mlihgenel/docufy/v2/internal/ui"
 )
 
@@ -72,6 +73,8 @@ var videoTrimCmd = &cobra.Command{
 	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		input := args[0]
+		var resolvedProfile profile.Definition
+		var profileActive bool
 		if _, err := os.Stat(input); os.IsNotExist(err) {
 			return fmt.Errorf("dosya bulunamadi: %s", input)
 		}
@@ -87,6 +90,8 @@ var videoTrimCmd = &cobra.Command{
 		if p, ok, err := resolveProfile(videoTrimProfile); err != nil {
 			return err
 		} else if ok {
+			resolvedProfile = p
+			profileActive = true
 			if p.Quality != nil && !cmd.Flags().Changed("quality") {
 				videoTrimQuality = *p.Quality
 			}
@@ -94,6 +99,14 @@ var videoTrimCmd = &cobra.Command{
 				videoTrimConflict = p.OnConflict
 			}
 			applyProfileMetadata(cmd, p, "preserve-metadata", &videoTrimPreserveMD, "strip-metadata", &videoTrimStripMD)
+		}
+		if profileActive {
+			sourceFormat := converter.DetectFormat(input)
+			if sourceFormat != "" {
+				if err := ensureProfileMatchesFormat(resolvedProfile, sourceFormat); err != nil {
+					return err
+				}
+			}
 		}
 
 		metadataMode, err := metadataModeFromFlags(videoTrimPreserveMD, videoTrimStripMD)
@@ -219,7 +232,7 @@ func init() {
 	videoTrimCmd.Flags().StringVar(&videoTrimOutputFile, "output-file", "", "Tam çıktı dosya yolu")
 	videoTrimCmd.Flags().StringVarP(&videoTrimName, "name", "n", "", "Çıktı dosya adı (uzantısız)")
 	videoTrimCmd.Flags().StringVar(&videoTrimToFormat, "to", "", "Hedef format (örn: mp4, mov)")
-	videoTrimCmd.Flags().StringVar(&videoTrimProfile, "profile", "", "Hazır profil (ör: social-story, podcast-clean, archive-lossless)")
+	videoTrimCmd.Flags().StringVar(&videoTrimProfile, "profile", "", "Hazır profil adı (liste için: docufy profiles list)")
 	videoTrimCmd.Flags().IntVarP(&videoTrimQuality, "quality", "q", 0, "Reencode modunda kalite seviyesi (1-100)")
 	videoTrimCmd.Flags().StringVar(&videoTrimConflict, "on-conflict", converter.ConflictVersioned, "Çakışma politikası: overwrite, skip, versioned")
 	videoTrimCmd.Flags().BoolVar(&videoTrimPreserveMD, "preserve-metadata", false, "Metadata bilgisini korumayı dene")

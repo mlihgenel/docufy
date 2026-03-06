@@ -11,6 +11,7 @@ import (
 
 	"github.com/mlihgenel/docufy/v2/internal/batch"
 	"github.com/mlihgenel/docufy/v2/internal/converter"
+	"github.com/mlihgenel/docufy/v2/internal/profile"
 	"github.com/mlihgenel/docufy/v2/internal/ui"
 	convwatch "github.com/mlihgenel/docufy/v2/internal/watch"
 )
@@ -44,6 +45,8 @@ otomatik dönüştürür.
 	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		sourceDir := args[0]
+		var resolvedProfile profile.Definition
+		var profileActive bool
 
 		applyProfileDefault(cmd, "profile", &watchProfile)
 		applyQualityDefault(cmd, "quality", &watchQuality)
@@ -54,6 +57,8 @@ otomatik dönüştürür.
 		if p, ok, err := resolveProfile(watchProfile); err != nil {
 			return err
 		} else if ok {
+			resolvedProfile = p
+			profileActive = true
 			applyProfileToWatch(cmd, p)
 			applyProfileMetadata(cmd, p, "preserve-metadata", &watchPreserveMD, "strip-metadata", &watchStripMD)
 		}
@@ -70,6 +75,11 @@ otomatik dönüştürür.
 		fromFormat := converter.NormalizeFormat(watchFrom)
 		if fromFormat == "" {
 			return fmt.Errorf("kaynak format belirtilmedi")
+		}
+		if profileActive {
+			if err := ensureProfileMatchesFormat(resolvedProfile, fromFormat); err != nil {
+				return err
+			}
 		}
 		if _, err := converter.FindConverter(fromFormat, targetFormat); err != nil {
 			return err
@@ -172,7 +182,7 @@ otomatik dönüştürür.
 func init() {
 	watchCmd.Flags().StringVarP(&watchTo, "to", "t", "", "Hedef format (zorunlu)")
 	watchCmd.Flags().StringVarP(&watchFrom, "from", "f", "", "Kaynak format (zorunlu)")
-	watchCmd.Flags().StringVar(&watchProfile, "profile", "", "Hazır profil (ör: social-story, podcast-clean, archive-lossless)")
+	watchCmd.Flags().StringVar(&watchProfile, "profile", "", "Hazır profil adı (liste için: docufy profiles list)")
 	watchCmd.Flags().BoolVarP(&watchRecursive, "recursive", "r", false, "Alt dizinleri de izle")
 	watchCmd.Flags().IntVarP(&watchQuality, "quality", "q", 0, "Kalite seviyesi (1-100)")
 	watchCmd.Flags().StringVar(&watchOnConflict, "on-conflict", converter.ConflictVersioned, "Çakışma politikası: overwrite, skip, versioned")

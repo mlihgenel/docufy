@@ -477,19 +477,32 @@ docufy video trim input.mp4 --mode remove --ranges "5-8,20-25" --dry-run
 - `stretch`: Oranı korumaz, hedef ölçüye zorla esnetir.
 
 ### Profiller
-- `social-story`: story formatı için hızlı preset (`story`, `pad`, orta-yüksek kalite).
-- `podcast-clean`: ses akışlarında daha temiz ve güvenli varsayılanlar.
-- `archive-lossless`: arşiv odaklı kalite/metadata koruma odaklı ayarlar.
+Profil, dönüştürme komutlarında tekrar eden ayarları tek isimle uygulayan bir "ayar preset" mekanizmasıdır.
+Format secimi yapmaz; sadece `quality`, `retry`, `metadata`, `resize`, `on-conflict` gibi bayraklara varsayılan deger verir.
+
+Built-in profiller kapsam alanina gore gelir:
+- `Gorsel+Video`: `social-story`, `social-feed`
+- `Video`: `social-reel-fast`, `video-web-balanced`, `video-compress-fast`
+- `Gorsel`: `image-web-balanced`, `image-print-a4`, `image-archive`
+- `Ses`: `podcast-clean`, `voice-note-fast`
+- `Belge`: `doc-share`, `doc-compact`
+- `Genel`: `archive-lossless`
+
+Not:
+- Profil kapsam disi bir kaynakta kullanilirsa CLI net hata verir.
+- Komutta verdiginiz bir flag, profildeki ayni degerin ustune yazar.
 
 Kullanıcı profilleri:
 - Dizin: `~/.docufy/profiles/`
 - Format: TOML
 - Komutlar: `docufy profiles list` ve `docufy profiles create`
 - Aynı isimli kullanıcı profili, built-in profilin alanlarını override eder.
+- `scope` alani: `all`, `document`, `image`, `video`, `audio` veya birden fazla (`image,video`).
 
 Örnek kullanıcı profili:
 ```toml
 description = "Story ciktilari icin hizli varsayilanlar"
+scope = "image,video"
 quality = 83
 on_conflict = "versioned"
 resize_preset = "story"
@@ -507,6 +520,7 @@ retry_delay = "500ms"
 Kullanım:
 ```bash
 docufy profiles list
+docufy profiles create story-fast --scope image,video --quality 83 --preset story --resize-mode fit --metadata-mode strip
 docufy convert klip.mp4 --to mp4 --profile story-fast
 docufy batch ./videolar --from mov --to mp4 --profile story-fast
 docufy watch ./incoming --from mov --to mp4 --profile story-fast

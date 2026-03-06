@@ -3045,7 +3045,10 @@ func (m interactiveModel) goToProfileSelect(isBatch bool) interactiveModel {
 	m.choiceDescs = append(m.choiceDescs, "Varsayilan CLI/env/project ayarlariyla devam et")
 	m.cursor = 0
 
-	for i, item := range items {
+	for _, item := range items {
+		if strings.TrimSpace(m.sourceFormat) != "" && !profile.ScopeMatchesFormat(item.Scope, m.sourceFormat) {
+			continue
+		}
 		label := item.Name
 		if item.Source != "" {
 			label = fmt.Sprintf("%s [%s]", item.Name, item.Source)
@@ -3058,7 +3061,7 @@ func (m interactiveModel) goToProfileSelect(isBatch bool) interactiveModel {
 		m.choiceIcons = append(m.choiceIcons, "🧩")
 		m.choiceDescs = append(m.choiceDescs, desc)
 		if m.profileActive && item.Name == m.selectedProfile {
-			m.cursor = i + 1
+			m.cursor = len(m.choices) - 1
 		}
 	}
 

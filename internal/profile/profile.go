@@ -19,6 +19,7 @@ import (
 type Definition struct {
 	Name         string
 	Description  string
+	Scope        string
 	Source       string
 	Path         string
 	Quality      *int
@@ -41,6 +42,7 @@ var builtins = map[string]Definition{
 	"social-story": {
 		Name:         "social-story",
 		Description:  "Dikey sosyal medya içerikleri için story/reel odaklı profil",
+		Scope:        "image,video",
 		Source:       "builtin",
 		Quality:      intPtr(82),
 		OnConflict:   converter.ConflictVersioned,
@@ -51,9 +53,103 @@ var builtins = map[string]Definition{
 		ResizeMode:   string(converter.ResizeModePad),
 		MetadataMode: converter.MetadataStrip,
 	},
+	"social-feed": {
+		Name:         "social-feed",
+		Description:  "Instagram/LinkedIn feed paylaşımları için kare odaklı profil",
+		Scope:        "image,video",
+		Source:       "builtin",
+		Quality:      intPtr(84),
+		OnConflict:   converter.ConflictVersioned,
+		Retry:        intPtr(1),
+		RetryDelay:   durationPtr(500 * time.Millisecond),
+		Report:       batch.ReportOff,
+		ResizePreset: "square",
+		ResizeMode:   string(converter.ResizeModePad),
+		MetadataMode: converter.MetadataStrip,
+	},
+	"social-reel-fast": {
+		Name:         "social-reel-fast",
+		Description:  "Kısa video yayınları için hızlı ve daha küçük çıktı odaklı profil",
+		Scope:        "video",
+		Source:       "builtin",
+		Quality:      intPtr(72),
+		OnConflict:   converter.ConflictVersioned,
+		Retry:        intPtr(1),
+		RetryDelay:   durationPtr(500 * time.Millisecond),
+		Report:       batch.ReportOff,
+		ResizePreset: "story",
+		ResizeMode:   string(converter.ResizeModeFit),
+		MetadataMode: converter.MetadataStrip,
+	},
+	"image-web-balanced": {
+		Name:         "image-web-balanced",
+		Description:  "Web ve uygulama kullanımı için dengeli görsel kalite profili",
+		Scope:        "image",
+		Source:       "builtin",
+		Quality:      intPtr(85),
+		OnConflict:   converter.ConflictVersioned,
+		Retry:        intPtr(1),
+		RetryDelay:   durationPtr(500 * time.Millisecond),
+		Report:       batch.ReportOff,
+		MetadataMode: converter.MetadataStrip,
+	},
+	"image-print-a4": {
+		Name:         "image-print-a4",
+		Description:  "A4 baskı için yüksek DPI ve ölçü odaklı görsel profil",
+		Scope:        "image",
+		Source:       "builtin",
+		Quality:      intPtr(95),
+		OnConflict:   converter.ConflictVersioned,
+		Retry:        intPtr(1),
+		RetryDelay:   durationPtr(500 * time.Millisecond),
+		Report:       batch.ReportOff,
+		Width:        floatPtr(21.0),
+		Height:       floatPtr(29.7),
+		Unit:         "cm",
+		DPI:          floatPtr(300),
+		ResizeMode:   string(converter.ResizeModeFit),
+		MetadataMode: converter.MetadataPreserve,
+	},
+	"image-archive": {
+		Name:         "image-archive",
+		Description:  "Gorsellerde kaliteyi ve metadata bilgisini koruyan profil",
+		Scope:        "image",
+		Source:       "builtin",
+		Quality:      intPtr(100),
+		OnConflict:   converter.ConflictVersioned,
+		Retry:        intPtr(1),
+		RetryDelay:   durationPtr(750 * time.Millisecond),
+		Report:       batch.ReportJSON,
+		MetadataMode: converter.MetadataPreserve,
+	},
+	"video-web-balanced": {
+		Name:         "video-web-balanced",
+		Description:  "Web yayinlari icin dengeli kalite ve dosya boyutu profili",
+		Scope:        "video",
+		Source:       "builtin",
+		Quality:      intPtr(80),
+		OnConflict:   converter.ConflictVersioned,
+		Retry:        intPtr(2),
+		RetryDelay:   durationPtr(1 * time.Second),
+		Report:       batch.ReportTXT,
+		MetadataMode: converter.MetadataStrip,
+	},
+	"video-compress-fast": {
+		Name:         "video-compress-fast",
+		Description:  "Hizli paylasim icin daha agresif video sikistirma profili",
+		Scope:        "video",
+		Source:       "builtin",
+		Quality:      intPtr(68),
+		OnConflict:   converter.ConflictVersioned,
+		Retry:        intPtr(2),
+		RetryDelay:   durationPtr(1 * time.Second),
+		Report:       batch.ReportTXT,
+		MetadataMode: converter.MetadataStrip,
+	},
 	"podcast-clean": {
 		Name:         "podcast-clean",
 		Description:  "Podcast ve konuşma sesleri için temiz varsayılanlar",
+		Scope:        "audio",
 		Source:       "builtin",
 		Quality:      intPtr(90),
 		OnConflict:   converter.ConflictVersioned,
@@ -62,9 +158,46 @@ var builtins = map[string]Definition{
 		Report:       batch.ReportTXT,
 		MetadataMode: converter.MetadataPreserve,
 	},
+	"voice-note-fast": {
+		Name:         "voice-note-fast",
+		Description:  "Hizli ses notu isleme ve paylasim odakli profil",
+		Scope:        "audio",
+		Source:       "builtin",
+		Quality:      intPtr(78),
+		OnConflict:   converter.ConflictVersioned,
+		Retry:        intPtr(1),
+		RetryDelay:   durationPtr(500 * time.Millisecond),
+		Report:       batch.ReportOff,
+		MetadataMode: converter.MetadataStrip,
+	},
+	"doc-share": {
+		Name:         "doc-share",
+		Description:  "Belge paylasimi icin dengeli okunabilirlik ve boyut profili",
+		Scope:        "document",
+		Source:       "builtin",
+		Quality:      intPtr(82),
+		OnConflict:   converter.ConflictVersioned,
+		Retry:        intPtr(1),
+		RetryDelay:   durationPtr(500 * time.Millisecond),
+		Report:       batch.ReportOff,
+		MetadataMode: converter.MetadataStrip,
+	},
+	"doc-compact": {
+		Name:         "doc-compact",
+		Description:  "Belge ciktilarini daha kompakt boyutta tutmaya odakli profil",
+		Scope:        "document",
+		Source:       "builtin",
+		Quality:      intPtr(74),
+		OnConflict:   converter.ConflictVersioned,
+		Retry:        intPtr(1),
+		RetryDelay:   durationPtr(500 * time.Millisecond),
+		Report:       batch.ReportTXT,
+		MetadataMode: converter.MetadataStrip,
+	},
 	"archive-lossless": {
 		Name:         "archive-lossless",
 		Description:  "Arşivleme odaklı, metadata koruyan güvenli profil",
+		Scope:        "all",
 		Source:       "builtin",
 		Quality:      intPtr(100),
 		OnConflict:   converter.ConflictVersioned,
@@ -156,6 +289,11 @@ func SaveUserProfile(def Definition) (string, error) {
 		return "", fmt.Errorf("profil adi bos")
 	}
 	def.Name = name
+	if normalizedScope, err := normalizeScope(def.Scope); err != nil {
+		return "", err
+	} else {
+		def.Scope = normalizedScope
+	}
 	if err := validateDefinition(def); err != nil {
 		return "", err
 	}
@@ -278,6 +416,11 @@ func parseProfileFile(path string) (Definition, error) {
 	if def.Name == "" {
 		return Definition{}, fmt.Errorf("%s profil adi bos", path)
 	}
+	if normalizedScope, err := normalizeScope(def.Scope); err != nil {
+		return Definition{}, err
+	} else {
+		def.Scope = normalizedScope
+	}
 	return def, validateDefinition(def)
 }
 
@@ -295,6 +438,12 @@ func assignProfileValue(def *Definition, key, raw string) error {
 			return err
 		}
 		def.Description = strings.TrimSpace(v)
+	case "scope":
+		v, err := parseTomlString(raw)
+		if err != nil {
+			return err
+		}
+		def.Scope = strings.ToLower(strings.TrimSpace(v))
 	case "quality":
 		v, err := parseTomlInt(raw)
 		if err != nil {
@@ -382,6 +531,9 @@ func mergeDefinition(base, override Definition) Definition {
 	if strings.TrimSpace(override.Description) != "" {
 		merged.Description = override.Description
 	}
+	if override.Scope != "" {
+		merged.Scope = override.Scope
+	}
 	if override.Quality != nil {
 		merged.Quality = override.Quality
 	}
@@ -422,6 +574,11 @@ func mergeDefinition(base, override Definition) Definition {
 }
 
 func validateDefinition(def Definition) error {
+	if def.Scope != "" {
+		if _, err := normalizeScope(def.Scope); err != nil {
+			return err
+		}
+	}
 	if def.Quality != nil && (*def.Quality < 0 || *def.Quality > 100) {
 		return fmt.Errorf("quality 0-100 araliginda olmali")
 	}
@@ -448,6 +605,9 @@ func encodeProfileTOML(def Definition) string {
 	lines = append(lines, fmt.Sprintf("name = %q", normalizeProfileName(def.Name)))
 	if strings.TrimSpace(def.Description) != "" {
 		lines = append(lines, fmt.Sprintf("description = %q", def.Description))
+	}
+	if strings.TrimSpace(def.Scope) != "" {
+		lines = append(lines, fmt.Sprintf("scope = %q", def.Scope))
 	}
 	if def.Quality != nil {
 		lines = append(lines, fmt.Sprintf("quality = %d", *def.Quality))
@@ -490,6 +650,161 @@ func encodeProfileTOML(def Definition) string {
 
 func normalizeProfileName(raw string) string {
 	return strings.ToLower(strings.TrimSpace(raw))
+}
+
+var scopeAliases = map[string]string{
+	"":          "",
+	"*":         "all",
+	"all":       "all",
+	"genel":     "all",
+	"document":  "document",
+	"documents": "document",
+	"doc":       "document",
+	"docs":      "document",
+	"belge":     "document",
+	"belgeler":  "document",
+	"image":     "image",
+	"images":    "image",
+	"photo":     "image",
+	"photos":    "image",
+	"gorsel":    "image",
+	"gorseller": "image",
+	"video":     "video",
+	"videos":    "video",
+	"audio":     "audio",
+	"audios":    "audio",
+	"sound":     "audio",
+	"ses":       "audio",
+}
+
+var scopeOrder = []string{"document", "image", "video", "audio"}
+
+var formatScopes = map[string][]string{
+	// Document
+	"md": {"document"}, "html": {"document"}, "pdf": {"document"}, "docx": {"document"},
+	"txt": {"document"}, "odt": {"document"}, "rtf": {"document"}, "csv": {"document"}, "xlsx": {"document"},
+	// Image
+	"png": {"image"}, "jpg": {"image"}, "jpeg": {"image"}, "webp": {"image"}, "bmp": {"image"},
+	"gif": {"image"}, "tif": {"image"}, "tiff": {"image"}, "ico": {"image"}, "svg": {"image"},
+	"heic": {"image"}, "heif": {"image"},
+	// Audio
+	"mp3": {"audio"}, "wav": {"audio"}, "ogg": {"audio"}, "flac": {"audio"}, "aac": {"audio"},
+	"m4a": {"audio"}, "wma": {"audio"}, "opus": {"audio"},
+	// Video
+	"mp4": {"video"}, "mov": {"video"}, "mkv": {"video"}, "avi": {"video"}, "m4v": {"video"},
+	"wmv": {"video"}, "flv": {"video"},
+	// Ambiguous container
+	"webm": {"audio", "video"},
+}
+
+// NormalizeScope scope string'ini (or: "image,video") canonical forma getirir.
+// Bos scope profilde "kapsam belirtilmemis/genel" anlamina gelir.
+func NormalizeScope(raw string) string {
+	normalized, err := normalizeScope(raw)
+	if err != nil {
+		return ""
+	}
+	return normalized
+}
+
+func normalizeScope(raw string) (string, error) {
+	trimmed := strings.TrimSpace(strings.ToLower(raw))
+	if trimmed == "" {
+		return "", nil
+	}
+
+	cleaned := strings.NewReplacer(";", ",", "|", ",", "/", ",").Replace(trimmed)
+	parts := strings.Split(cleaned, ",")
+
+	set := make(map[string]struct{}, len(parts))
+	for _, part := range parts {
+		token := strings.TrimSpace(part)
+		if token == "" {
+			continue
+		}
+		normalizedToken, ok := scopeAliases[token]
+		if !ok {
+			return "", fmt.Errorf("gecersiz scope: %s", token)
+		}
+		if normalizedToken == "all" {
+			return "all", nil
+		}
+		if normalizedToken != "" {
+			set[normalizedToken] = struct{}{}
+		}
+	}
+
+	if len(set) == 0 {
+		return "", nil
+	}
+
+	out := make([]string, 0, len(set))
+	for _, scope := range scopeOrder {
+		if _, ok := set[scope]; ok {
+			out = append(out, scope)
+		}
+	}
+	return strings.Join(out, ","), nil
+}
+
+// ScopeLabel scope alanini kullaniciya okunur sekilde yazar.
+func ScopeLabel(raw string) string {
+	scope := NormalizeScope(raw)
+	if scope == "" || scope == "all" {
+		return "Genel"
+	}
+
+	parts := strings.Split(scope, ",")
+	labels := make([]string, 0, len(parts))
+	for _, part := range parts {
+		switch part {
+		case "document":
+			labels = append(labels, "Belge")
+		case "image":
+			labels = append(labels, "Gorsel")
+		case "video":
+			labels = append(labels, "Video")
+		case "audio":
+			labels = append(labels, "Ses")
+		}
+	}
+	if len(labels) == 0 {
+		return "Genel"
+	}
+	return strings.Join(labels, "+")
+}
+
+// ScopeMatchesFormat profile kapsamının kaynak formatla uyumlu olup olmadigini bildirir.
+// Scope bos/all ise her format kabul edilir.
+func ScopeMatchesFormat(scopeRaw string, formatRaw string) bool {
+	scope := NormalizeScope(scopeRaw)
+	if scope == "" || scope == "all" {
+		return true
+	}
+
+	format := converter.NormalizeFormat(formatRaw)
+	if format == "" {
+		return true
+	}
+	cats, ok := formatScopes[format]
+	if !ok || len(cats) == 0 {
+		return true
+	}
+
+	allowed := make(map[string]struct{}, 4)
+	for _, s := range strings.Split(scope, ",") {
+		s = strings.TrimSpace(s)
+		if s != "" {
+			allowed[s] = struct{}{}
+		}
+	}
+
+	for _, cat := range cats {
+		if _, ok := allowed[cat]; ok {
+			return true
+		}
+	}
+	return false
 }
 
 func stripInlineComment(line string) string {

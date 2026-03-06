@@ -8,7 +8,9 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/mlihgenel/docufy/v2/internal/converter"
 	"github.com/mlihgenel/docufy/v2/internal/pipeline"
+	"github.com/mlihgenel/docufy/v2/internal/profile"
 	"github.com/mlihgenel/docufy/v2/internal/ui"
 )
 
@@ -41,6 +43,8 @@ var pipelineRunCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		specPath := args[0]
 		jsonOutput := isJSONOutput()
+		var resolvedProfile profile.Definition
+		var profileActive bool
 
 		applyProfileDefault(cmd, "profile", &pipelineProfile)
 		applyQualityDefault(cmd, "quality", &pipelineQuality)
@@ -52,6 +56,8 @@ var pipelineRunCmd = &cobra.Command{
 			ui.PrintError(err.Error())
 			return err
 		} else if ok {
+			resolvedProfile = p
+			profileActive = true
 			applyProfileToPipeline(cmd, p)
 			applyProfileMetadata(cmd, p, "preserve-metadata", &pipelinePreserveMD, "strip-metadata", &pipelineStripMD)
 		}
@@ -76,6 +82,15 @@ var pipelineRunCmd = &cobra.Command{
 			return err
 		}
 		spec = resolvePipelinePaths(spec, specPath)
+		if profileActive {
+			fromFormat := converter.DetectFormat(spec.Input)
+			if fromFormat != "" {
+				if err := ensureProfileMatchesFormat(resolvedProfile, fromFormat); err != nil {
+					ui.PrintError(err.Error())
+					return err
+				}
+			}
+		}
 		resumePlan, err := buildPipelineResumePlan(spec, pipelineResumeFile)
 		if err != nil {
 			ui.PrintError(err.Error())
@@ -175,7 +190,7 @@ var pipelineRunCmd = &cobra.Command{
 }
 
 func init() {
-	pipelineRunCmd.Flags().StringVar(&pipelineProfile, "profile", "", "Hazır profil (ör: social-story, podcast-clean, archive-lossless)")
+	pipelineRunCmd.Flags().StringVar(&pipelineProfile, "profile", "", "Hazır profil adı (liste için: docufy profiles list)")
 	pipelineRunCmd.Flags().IntVarP(&pipelineQuality, "quality", "q", 0, "Varsayılan kalite seviyesi (1-100)")
 	pipelineRunCmd.Flags().StringVar(&pipelineOnConflict, "on-conflict", "versioned", "Çakışma politikası: overwrite, skip, versioned")
 	pipelineRunCmd.Flags().BoolVar(&pipelinePreserveMD, "preserve-metadata", false, "Metadata bilgisini korumayı dene")

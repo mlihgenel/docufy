@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sort"
 	"strings"
 	"time"
 
@@ -16,6 +17,7 @@ import (
 
 var (
 	profileCreateDescription  string
+	profileCreateScope        string
 	profileCreateQuality      int
 	profileCreateOnConflict   string
 	profileCreateRetry        int
@@ -33,6 +35,8 @@ var (
 var profilesCmd = &cobra.Command{
 	Use:   "profiles",
 	Short: "Hazır ve kullanıcı tanımlı profilleri yönet",
+	Long: `Profil, tekrar kullanabileceginiz varsayilan ayar setidir.
+Profil kaynak/hedef format secmez; quality/retry/metadata/resize gibi flag degerlerini topluca uygular.`,
 }
 
 var profilesListCmd = &cobra.Command{
@@ -50,17 +54,30 @@ var profilesListCmd = &cobra.Command{
 
 		fmt.Println()
 		fmt.Printf("  %s %sProfiller%s\n\n", "🧩", ui.Bold, ui.Reset)
-		headers := []string{"Ad", "Kaynak", "Aciklama"}
-		rows := make([][]string, 0, len(items))
-		for _, item := range items {
-			desc := item.Description
-			if strings.TrimSpace(desc) == "" {
-				desc = summarizeProfile(item)
-			}
-			rows = append(rows, []string{item.Name, item.Source, desc})
-		}
-		ui.PrintTable(headers, rows)
+		ui.PrintInfo("Profil: donusum komutlarinda varsayilan ayarlari hizli uygulamak icin kullanilir.")
+		ui.PrintInfo("Not: Komutta verdiginiz flag degeri, profildeki ayni degerin ustune yazar.")
 		fmt.Println()
+
+		groups := groupProfilesByScope(items)
+		for _, group := range groups {
+			fmt.Printf("  • %sKapsam: %s%s\n", ui.Bold, group.Label, ui.Reset)
+			headers := []string{"Ad", "Kaynak", "Kapsam", "Ne Yapar"}
+			rows := make([][]string, 0, len(group.Items))
+			for _, item := range group.Items {
+				desc := item.Description
+				if strings.TrimSpace(desc) == "" {
+					desc = summarizeProfile(item)
+				}
+				rows = append(rows, []string{
+					item.Name,
+					item.Source,
+					profile.ScopeLabel(item.Scope),
+					desc,
+				})
+			}
+			ui.PrintTable(headers, rows)
+			fmt.Println()
+		}
 		return nil
 	},
 }
@@ -116,6 +133,10 @@ func buildProfileDefinitionFromInput(cmd *cobra.Command, args []string) (profile
 	if err != nil {
 		return profile.Definition{}, err
 	}
+	scope, err := firstString(prompter, profileCreateScope, "scope (all/document/image/video/audio veya image,video)")
+	if err != nil {
+		return profile.Definition{}, err
+	}
 	onConflict, err := firstString(prompter, profileCreateOnConflict, "on-conflict")
 	if err != nil {
 		return profile.Definition{}, err
@@ -148,6 +169,7 @@ func buildProfileDefinitionFromInput(cmd *cobra.Command, args []string) (profile
 	def := profile.Definition{
 		Name:         name,
 		Description:  strings.TrimSpace(description),
+		Scope:        strings.TrimSpace(scope),
 		OnConflict:   strings.TrimSpace(onConflict),
 		Report:       strings.TrimSpace(report),
 		ResizePreset: strings.TrimSpace(resizePreset),
@@ -296,7 +318,8 @@ func isTerminalPromptAllowed(cmd *cobra.Command) bool {
 }
 
 func summarizeProfile(def profile.Definition) string {
-	parts := make([]string, 0, 4)
+	parts := make([]string, 0, 6)
+	parts = append(parts, "kapsam="+strings.ToLower(profile.ScopeLabel(def.Scope)))
 	if def.ResizePreset != "" {
 		parts = append(parts, "preset="+def.ResizePreset)
 	}
@@ -315,6 +338,70 @@ func summarizeProfile(def profile.Definition) string {
 	return strings.Join(parts, ", ")
 }
 
+type profileScopeGroup struct {
+	Key   string
+	Label string
+	Items []profile.Definition
+}
+
+func groupProfilesByScope(items []profile.Definition) []profileScopeGroup {
+	grouped := make(map[string][]profile.Definition)
+	keys := make([]string, 0)
+
+	for _, item := range items {
+		key := profile.NormalizeScope(item.Scope)
+		if key == "" {
+			key = "all"
+		}
+		if _, ok := grouped[key]; !ok {
+			keys = append(keys, key)
+		}
+		grouped[key] = append(grouped[key], item)
+	}
+
+	sort.Slice(keys, func(i, j int) bool {
+		ri := scopeGroupRank(keys[i])
+		rj := scopeGroupRank(keys[j])
+		if ri != rj {
+			return ri < rj
+		}
+		return keys[i] < keys[j]
+	})
+
+	result := make([]profileScopeGroup, 0, len(keys))
+	for _, key := range keys {
+		scopeItems := grouped[key]
+		sort.Slice(scopeItems, func(i, j int) bool {
+			return scopeItems[i].Name < scopeItems[j].Name
+		})
+		result = append(result, profileScopeGroup{
+			Key:   key,
+			Label: profile.ScopeLabel(key),
+			Items: scopeItems,
+		})
+	}
+	return result
+}
+
+func scopeGroupRank(key string) int {
+	switch key {
+	case "image,video":
+		return 0
+	case "image":
+		return 1
+	case "video":
+		return 2
+	case "audio":
+		return 3
+	case "document":
+		return 4
+	case "all":
+		return 9
+	default:
+		return 8
+	}
+}
+
 func parseInt(raw string) (int, error) {
 	var value int
 	_, err := fmt.Sscanf(strings.TrimSpace(raw), "%d", &value)
@@ -329,6 +416,7 @@ func parseFloat(raw string) (float64, error) {
 
 func init() {
 	profilesCreateCmd.Flags().StringVar(&profileCreateDescription, "description", "", "Profil aciklamasi")
+	profilesCreateCmd.Flags().StringVar(&profileCreateScope, "scope", "", "Profil kapsami: all, document, image, video, audio (veya image,video)")
 	profilesCreateCmd.Flags().IntVar(&profileCreateQuality, "quality", 0, "Varsayilan kalite")
 	profilesCreateCmd.Flags().StringVar(&profileCreateOnConflict, "on-conflict", "", "Varsayilan cakisma politikasi")
 	profilesCreateCmd.Flags().IntVar(&profileCreateRetry, "retry", 0, "Varsayilan retry sayisi")

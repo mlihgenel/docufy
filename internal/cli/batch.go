@@ -11,6 +11,7 @@ import (
 
 	"github.com/mlihgenel/docufy/v2/internal/batch"
 	"github.com/mlihgenel/docufy/v2/internal/converter"
+	"github.com/mlihgenel/docufy/v2/internal/profile"
 	"github.com/mlihgenel/docufy/v2/internal/ui"
 )
 
@@ -60,6 +61,8 @@ Worker pool kullanarak paralel dönüşüm yapar.
 	RunE: func(cmd *cobra.Command, args []string) error {
 		source := args[0]
 		jsonOutput := isJSONOutput()
+		var resolvedProfile profile.Definition
+		var profileActive bool
 		applyProfileDefault(cmd, "profile", &batchProfile)
 		applyQualityDefault(cmd, "quality", &batchQuality)
 		applyOnConflictDefault(cmd, "on-conflict", &batchOnConflict)
@@ -71,6 +74,8 @@ Worker pool kullanarak paralel dönüşüm yapar.
 			ui.PrintError(err.Error())
 			return err
 		} else if ok {
+			resolvedProfile = p
+			profileActive = true
 			applyProfileToBatch(cmd, p)
 			applyProfileMetadata(cmd, p, "preserve-metadata", &batchPreserveMD, "strip-metadata", &batchStripMD)
 		}
@@ -106,6 +111,12 @@ Worker pool kullanarak paralel dönüşüm yapar.
 		if fromFormat == "" {
 			ui.PrintError("Kaynak format belirtilmedi. --from <format> kullanın.")
 			return fmt.Errorf("kaynak format belirtilmedi")
+		}
+		if profileActive {
+			if err := ensureProfileMatchesFormat(resolvedProfile, fromFormat); err != nil {
+				ui.PrintError(err.Error())
+				return err
+			}
 		}
 
 		resizeSpec, err := converter.BuildResizeSpec(
@@ -378,7 +389,7 @@ Worker pool kullanarak paralel dönüşüm yapar.
 func init() {
 	batchCmd.Flags().StringVarP(&batchTo, "to", "t", "", "Hedef format (zorunlu)")
 	batchCmd.Flags().StringVarP(&batchFrom, "from", "f", "", "Kaynak format (zorunlu)")
-	batchCmd.Flags().StringVar(&batchProfile, "profile", "", "Hazır profil (ör: social-story, podcast-clean, archive-lossless)")
+	batchCmd.Flags().StringVar(&batchProfile, "profile", "", "Hazır profil adı (liste için: docufy profiles list)")
 	batchCmd.Flags().BoolVarP(&batchRecursive, "recursive", "r", false, "Alt dizinleri de tara")
 	batchCmd.Flags().BoolVar(&batchPreserveTree, "preserve-tree", false, "Dizin modunda --output altına klasör yapısını koru")
 	batchCmd.Flags().BoolVar(&batchDryRun, "dry-run", false, "Ön izleme — dönüşüm yapmadan listele")

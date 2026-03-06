@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/mlihgenel/docufy/v2/internal/converter"
+	"github.com/mlihgenel/docufy/v2/internal/profile"
 	"github.com/mlihgenel/docufy/v2/internal/ui"
 )
 
@@ -51,6 +52,8 @@ var convertCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		inputFile := args[0]
 		jsonOutput := isJSONOutput()
+		var resolvedProfile profile.Definition
+		var profileActive bool
 		applyProfileDefault(cmd, "profile", &convertProfile)
 		applyQualityDefault(cmd, "quality", &quality)
 		applyOnConflictDefault(cmd, "on-conflict", &convertOnConflict)
@@ -60,6 +63,8 @@ var convertCmd = &cobra.Command{
 			ui.PrintError(err.Error())
 			return err
 		} else if ok {
+			resolvedProfile = p
+			profileActive = true
 			applyProfileToConvert(cmd, p)
 			applyProfileMetadata(cmd, p, "preserve-metadata", &convertPreserveMD, "strip-metadata", &convertStripMD)
 		}
@@ -88,6 +93,12 @@ var convertCmd = &cobra.Command{
 		if fromFormat == "" {
 			ui.PrintError("Dosya formatı algılanamadı. Lütfen uzantılı bir dosya belirtin.")
 			return fmt.Errorf("format algılanamadı")
+		}
+		if profileActive {
+			if err := ensureProfileMatchesFormat(resolvedProfile, fromFormat); err != nil {
+				ui.PrintError(err.Error())
+				return err
+			}
 		}
 
 		// Hedef format kontrolü
@@ -238,7 +249,7 @@ var convertCmd = &cobra.Command{
 
 func init() {
 	convertCmd.Flags().StringVarP(&toFormat, "to", "t", "", "Hedef format (zorunlu, ör: pdf, docx, mp3)")
-	convertCmd.Flags().StringVar(&convertProfile, "profile", "", "Hazır profil (ör: social-story, podcast-clean, archive-lossless)")
+	convertCmd.Flags().StringVar(&convertProfile, "profile", "", "Hazır profil adı (liste için: docufy profiles list)")
 	convertCmd.Flags().IntVarP(&quality, "quality", "q", 0, "Kalite seviyesi (1-100, görsel/ses dönüşümleri için)")
 	convertCmd.Flags().StringVarP(&customName, "name", "n", "", "Çıktı dosya adı (uzantısız)")
 	convertCmd.Flags().StringVar(&convertOnConflict, "on-conflict", converter.ConflictVersioned, "Çakışma politikası: overwrite, skip, versioned")

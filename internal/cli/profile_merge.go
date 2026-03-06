@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -138,4 +139,18 @@ func metadataModeFromFlags(preserve bool, strip bool) (string, error) {
 		return converter.MetadataStrip, nil
 	}
 	return converter.MetadataAuto, nil
+}
+
+func ensureProfileMatchesFormat(p profile.Definition, fromFormat string) error {
+	if profile.ScopeMatchesFormat(p.Scope, fromFormat) {
+		return nil
+	}
+
+	scopeLabel := profile.ScopeLabel(p.Scope)
+	return fmt.Errorf(
+		"profil uygun degil: %s (kapsam: %s, kaynak: %s). Uygun bir profil secin veya --profile kullanmayin",
+		p.Name,
+		scopeLabel,
+		strings.ToUpper(fromFormat),
+	)
 }
