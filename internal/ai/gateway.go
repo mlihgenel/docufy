@@ -12,10 +12,12 @@ import (
 )
 
 const (
-	ToolConvertFile  = "convert_file"
-	ToolTrimVideo    = "trim_video"
-	ToolExtractAudio = "extract_audio"
-	ToolGetFileInfo  = "get_file_info"
+	ToolConvertFile         = "convert_file"
+	ToolTrimVideo           = "trim_video"
+	ToolExtractAudio        = "extract_audio"
+	ToolGetFileInfo         = "get_file_info"
+	ToolTranscribeMedia     = "transcribe_media"
+	ToolSummarizeTranscript = "summarize_transcript"
 )
 
 type Gateway struct {
