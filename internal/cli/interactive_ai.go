@@ -3,7 +3,6 @@ package cli
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -19,7 +18,6 @@ import (
 	aigateway "github.com/mlihgenel/docufy/v2/internal/ai"
 	"github.com/mlihgenel/docufy/v2/internal/config"
 	"github.com/mlihgenel/docufy/v2/internal/converter"
-	"github.com/mlihgenel/docufy/v2/internal/secret"
 )
 
 const (
@@ -35,7 +33,7 @@ type aiToolDoneMsg struct {
 }
 
 func (m interactiveModel) isAITextInputState() bool {
-	return m.state == stateAICommandInput || m.state == stateAIAuthInput || m.state == stateAIRiskConfirmInput
+	return m.state == stateAICommandInput || m.state == stateAIAuthInput
 }
 
 func (m *interactiveModel) currentAIInputField() *string {
@@ -44,8 +42,6 @@ func (m *interactiveModel) currentAIInputField() *string {
 		return &m.aiPromptInput
 	case stateAIAuthInput:
 		return &m.aiAPIKeyInput
-	case stateAIRiskConfirmInput:
-		return &m.aiRiskAckInput
 	default:
 		return nil
 	}
@@ -239,39 +235,6 @@ func (m interactiveModel) viewAIDone() string {
 	return b.String()
 }
 
-func (m interactiveModel) viewAIRiskConfirmInput() string {
-	var b strings.Builder
-
-	b.WriteString("\n")
-	b.WriteString(menuTitleStyle.Render(" ◆ ⚠️ Risk Onayı "))
-	b.WriteString("\n\n")
-
-	b.WriteString(lipgloss.NewStyle().Foreground(warningColor).Bold(true).Render("  Riskli komut tespit edildi. Devam için ONAY yazın."))
-	b.WriteString("\n")
-	if len(m.aiPendingRisks) > 0 {
-		for _, risk := range m.aiPendingRisks {
-			b.WriteString(dimStyle.Render("  - " + risk))
-			b.WriteString("\n")
-		}
-	}
-	if strings.TrimSpace(m.aiStatusMessage) != "" {
-		b.WriteString("\n")
-		b.WriteString(infoStyle.Render("  " + m.aiStatusMessage))
-		b.WriteString("\n")
-	}
-	b.WriteString("\n")
-
-	cursor := " "
-	if m.showCursor {
-		cursor = "▌"
-	}
-	b.WriteString(pathStyle.Render("  > " + m.aiRiskAckInput + cursor))
-	b.WriteString("\n\n")
-	b.WriteString(dimStyle.Render(`  Enter Onayla  •  Esc Plan Ekranı  •  "ONAY" yaz`))
-	b.WriteString("\n")
-	return b.String()
-}
-
 func (m interactiveModel) viewAIAuthProviderSelect() string {
 	var b strings.Builder
 
@@ -439,44 +402,6 @@ func envKeysForProvider(provider string) []string {
 	}
 }
 
-func aiNeedsHighRiskAck(prompt string) bool {
-	lower := strings.ToLower(strings.TrimSpace(prompt))
-	if lower == "" {
-		return false
-	}
-	return strings.Contains(lower, "overwrite") ||
-		strings.Contains(lower, "üzerine") ||
-		strings.Contains(lower, "uzerine") ||
-		strings.Contains(lower, "remove") ||
-		strings.Contains(lower, "sil") ||
-		strings.Contains(lower, "batch") ||
-		strings.Contains(lower, "toplu") ||
-		strings.Contains(lower, "watch") ||
-		strings.Contains(lower, "izle")
-}
-
-func loadStoredAIAPIKey(provider string) string {
-	key, err := secret.LoadAIAPIKey(provider)
-	if err != nil {
-		return ""
-	}
-	return strings.TrimSpace(key)
-}
-
-func persistAIAPIKey(provider string, key string) string {
-	err := secret.SaveAIAPIKey(provider, key)
-	if err == nil {
-		return ""
-	}
-	if errors.Is(err, secret.ErrDisabled) {
-		return ""
-	}
-	if errors.Is(err, secret.ErrNotSupported) {
-		return "Keychain bu sistemde desteklenmiyor; anahtar sadece bu oturumda kullanılacak."
-	}
-	return "API key keychain'e kaydedilemedi: " + err.Error()
-}
-
 func (m interactiveModel) hasAIKeyConfigured() bool {
 	if strings.TrimSpace(m.aiAPIKey) != "" {
 		return true
@@ -499,7 +424,6 @@ func (m interactiveModel) applyAIProviderChoice(provider string) interactiveMode
 	m.aiProvider = normalized
 	m.aiModel = defaultAIModel(normalized)
 	m.aiBaseURL = defaultAIBaseURL(normalized)
-	m.aiAPIKey = loadStoredAIAPIKey(normalized)
 	m.aiSessionReady = false
 	m.aiSessionID = ""
 
@@ -529,9 +453,6 @@ func (m interactiveModel) startAISession() interactiveModel {
 		m.aiBaseURL = defaultAIBaseURL(m.aiProvider)
 	}
 	m.aiSidecarURL = normalizeAISidecarURL(m.aiSidecarURL)
-	if providerNeedsAPIKey(m.aiProvider) && strings.TrimSpace(m.aiAPIKey) == "" {
-		m.aiAPIKey = loadStoredAIAPIKey(m.aiProvider)
-	}
 
 	if providerNeedsAPIKey(m.aiProvider) && !m.hasAIKeyConfigured() {
 		m.aiStatusMessage = "Bu provider için API key gerekli. Ortam değişkeni veya giriş ekranını kullanın."

@@ -84,7 +84,6 @@ func TestMainSectionActionAIAssistant(t *testing.T) {
 func TestAIIntroTransitionRequiresAuthByDefault(t *testing.T) {
 	t.Setenv("DOCUFY_AI_API_KEY", "")
 	t.Setenv("OPENAI_API_KEY", "")
-	t.Setenv("DOCUFY_AI_DISABLE_KEYCHAIN", "1")
 	m := newInteractiveModel(nil, false).goToAIIntro()
 	m.aiProvider = aiProviderOpenAI
 	m.aiAPIKey = ""
@@ -105,7 +104,6 @@ func TestAIIntroTransitionRequiresAuthByDefault(t *testing.T) {
 
 func TestAIIntroTransitionToChatWithEnvKey(t *testing.T) {
 	t.Setenv("DOCUFY_AI_API_KEY", "test-key")
-	t.Setenv("DOCUFY_AI_DISABLE_KEYCHAIN", "1")
 	m := newInteractiveModel(nil, false).goToAIIntro()
 	m.cursor = 0
 
@@ -180,46 +178,6 @@ func TestAIPlanConfirmApproveStartsExecution(t *testing.T) {
 	nextModel, cmd := m.handleEnter()
 	if cmd == nil {
 		t.Fatalf("expected command execution cmd after confirmation")
-	}
-	next, ok := nextModel.(interactiveModel)
-	if !ok {
-		t.Fatalf("unexpected model type")
-	}
-	if next.state != stateAIExecuting {
-		t.Fatalf("expected stateAIExecuting, got %v", next.state)
-	}
-}
-
-func TestAIPlanConfirmRiskRequiresSecondConfirmation(t *testing.T) {
-	m := newInteractiveModel(nil, false)
-	m = m.goToAIPlanConfirm()
-	m.aiPendingPrompt = "dosyayı üzerine yaz ve overwrite et"
-	m.aiNeedsRiskAck = true
-	m.cursor = 0
-
-	nextModel, cmd := m.handleEnter()
-	if cmd != nil {
-		t.Fatalf("expected no command before risk ack")
-	}
-	next, ok := nextModel.(interactiveModel)
-	if !ok {
-		t.Fatalf("unexpected model type")
-	}
-	if next.state != stateAIRiskConfirmInput {
-		t.Fatalf("expected stateAIRiskConfirmInput, got %v", next.state)
-	}
-}
-
-func TestAIRiskConfirmInputApprovesExecution(t *testing.T) {
-	m := newInteractiveModel(nil, false)
-	m.state = stateAIRiskConfirmInput
-	m.aiPendingPrompt = "dosya bilgisi ver"
-	m.aiCurrentFile = "/tmp/a.txt"
-	m.aiRiskAckInput = "ONAY"
-
-	nextModel, cmd := m.handleEnter()
-	if cmd == nil {
-		t.Fatalf("expected command after valid risk confirmation")
 	}
 	next, ok := nextModel.(interactiveModel)
 	if !ok {
