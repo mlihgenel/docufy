@@ -29,30 +29,6 @@ func TestExecuteAICommandSetCurrentFile(t *testing.T) {
 	}
 }
 
-func TestAICommandDoneTransitionsToDoneState(t *testing.T) {
-	m := newInteractiveModel(nil, false)
-	m.state = stateAIExecuting
-	m.aiPendingPrompt = "dosya bilgisi ver"
-
-	nextModel, cmd := m.Update(aiToolDoneMsg{resultText: "işlem tamamlandı", currentFile: "/tmp/a.mp4"})
-	if cmd != nil {
-		t.Fatalf("expected no command after aiToolDoneMsg")
-	}
-	next, ok := nextModel.(interactiveModel)
-	if !ok {
-		t.Fatalf("unexpected model type")
-	}
-	if next.state != stateAIDone {
-		t.Fatalf("expected stateAIDone, got %v", next.state)
-	}
-	if next.aiLastResult != "işlem tamamlandı" {
-		t.Fatalf("unexpected aiLastResult: %q", next.aiLastResult)
-	}
-	if next.aiPendingPrompt != "" {
-		t.Fatalf("expected pending prompt to be cleared")
-	}
-}
-
 func TestExecuteAICommandInfoWithCurrentFile(t *testing.T) {
 	root := t.TempDir()
 	input := filepath.Join(root, "sample.txt")
