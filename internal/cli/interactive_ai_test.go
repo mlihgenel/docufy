@@ -19,7 +19,7 @@ func TestExecuteAICommandSetCurrentFile(t *testing.T) {
 	}
 
 	gw := aigateway.NewGateway(aigateway.Policy{AllowedRoots: []string{root}})
-	result, current, err := executeAICommand(gw, "/dosya "+input, "", aiExecutionConfig{})
+	result, current, err := executeAICommand(gw, "/dosya "+input, "")
 	if err != nil {
 		t.Fatalf("executeAICommand failed: %v", err)
 	}
@@ -63,7 +63,7 @@ func TestExecuteAICommandInfoWithCurrentFile(t *testing.T) {
 	}
 
 	gw := aigateway.NewGateway(aigateway.Policy{AllowedRoots: []string{root}})
-	result, current, err := executeAICommand(gw, "dosya bilgisi ver", input, aiExecutionConfig{})
+	result, current, err := executeAICommand(gw, "dosya bilgisi ver", input)
 	if err != nil {
 		t.Fatalf("executeAICommand failed: %v", err)
 	}
@@ -83,7 +83,7 @@ func TestExecuteAICommandUnknownIntent(t *testing.T) {
 	}
 
 	gw := aigateway.NewGateway(aigateway.Policy{AllowedRoots: []string{root}})
-	result, _, err := executeAICommand(gw, "bu komutu anlamsizca dene", input, aiExecutionConfig{})
+	result, _, err := executeAICommand(gw, "bu komutu anlamsizca dene", input)
 	if err != nil {
 		t.Fatalf("executeAICommand failed: %v", err)
 	}
@@ -121,7 +121,7 @@ func TestExecuteAICommandTrimRemoveUsesRemoveMode(t *testing.T) {
 	}
 
 	gw := aigateway.NewGateway(aigateway.Policy{AllowedRoots: []string{root}})
-	_, _, err := executeAICommand(gw, "videoyu kırp ve 5 ile 7 saniyeyi sil", input, aiExecutionConfig{})
+	_, _, err := executeAICommand(gw, "videoyu kırp ve 5 ile 7 saniyeyi sil", input)
 	if err == nil {
 		t.Fatalf("expected execution error with fake media input")
 	}
@@ -154,33 +154,6 @@ func TestParseAIMetadataMode(t *testing.T) {
 	}
 }
 
-func TestParseAITranscribeAndSummaryHints(t *testing.T) {
-	if !isAITranscribeCommand("bu toplanti videosunu transkript et") {
-		t.Fatalf("expected transcribe intent")
-	}
-	if !isAISummarizeCommand("metni ozetle") {
-		t.Fatalf("expected summarize intent")
-	}
-	if got := parseAITranscribeLanguage("metne dok ve turkce yaz"); got != "tr" {
-		t.Fatalf("expected tr language, got %q", got)
-	}
-	if got := parseAISummaryStyle("madde madde ozetle"); got != "bullet_points" {
-		t.Fatalf("expected bullet_points style, got %q", got)
-	}
-}
-
-func TestExecuteAICommandSummarizeNeedsTranscriptPath(t *testing.T) {
-	root := t.TempDir()
-	gw := aigateway.NewGateway(aigateway.Policy{AllowedRoots: []string{root}})
-	_, _, err := executeAICommand(gw, "bunu ozetle", "", aiExecutionConfig{})
-	if err == nil {
-		t.Fatalf("expected transcript path error")
-	}
-	if !strings.Contains(strings.ToLower(err.Error()), "transcript") {
-		t.Fatalf("unexpected error: %v", err)
-	}
-}
-
 func TestExecuteAICommandWatchCreatesTaskFile(t *testing.T) {
 	root := t.TempDir()
 	watchDir := filepath.Join(root, "incoming")
@@ -198,7 +171,7 @@ func TestExecuteAICommandWatchCreatesTaskFile(t *testing.T) {
 	}
 
 	gw := aigateway.NewGateway(aigateway.Policy{AllowedRoots: []string{root}})
-	result, _, err := executeAICommand(gw, "watch "+watchDir+" from mp4 to gif", "", aiExecutionConfig{})
+	result, _, err := executeAICommand(gw, "watch "+watchDir+" from mp4 to gif", "")
 	if err != nil {
 		t.Fatalf("executeAICommand failed: %v", err)
 	}
@@ -233,7 +206,7 @@ func TestExecuteAICommandBatchCreatesTaskFile(t *testing.T) {
 	}
 
 	gw := aigateway.NewGateway(aigateway.Policy{AllowedRoots: []string{root}})
-	result, _, err := executeAICommand(gw, "toplu "+batchDir+" from png to webp", "", aiExecutionConfig{})
+	result, _, err := executeAICommand(gw, "toplu "+batchDir+" from png to webp", "")
 	if err != nil {
 		t.Fatalf("executeAICommand failed: %v", err)
 	}

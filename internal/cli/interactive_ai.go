@@ -34,13 +34,6 @@ type aiToolDoneMsg struct {
 	err         error
 }
 
-type aiExecutionConfig struct {
-	Provider string
-	Model    string
-	BaseURL  string
-	APIKey   string
-}
-
 func (m interactiveModel) isAITextInputState() bool {
 	return m.state == stateAICommandInput || m.state == stateAIAuthInput || m.state == stateAIRiskConfirmInput
 }
@@ -562,13 +555,6 @@ func (m interactiveModel) startAISession() interactiveModel {
 }
 
 func (m interactiveModel) doAICommand(prompt string) tea.Cmd {
-	runtime := aiExecutionConfig{
-		Provider: m.aiProvider,
-		Model:    m.aiModel,
-		BaseURL:  m.aiBaseURL,
-		APIKey:   m.aiAPIKey,
-	}
-
 	return func() tea.Msg {
 		if sidecar := m.sidecarClient(); sidecar != nil {
 			ctx, cancel := context.WithTimeout(context.Background(), aigateway.DefaultSidecarTimeout)
@@ -599,7 +585,7 @@ func (m interactiveModel) doAICommand(prompt string) tea.Cmd {
 			}
 
 			gw := aigateway.NewGateway(m.aiPolicy())
-			resultText, currentFile, localErr := executeAICommand(gw, prompt, m.aiCurrentFile, runtime)
+			resultText, currentFile, localErr := executeAICommand(gw, prompt, m.aiCurrentFile)
 			if localErr != nil {
 				m.writeAIAuditLog("sidecar+local", prompt, m.aiCurrentFile, "failed", "", fmt.Sprintf("sidecar: %v; local: %v", err, localErr))
 				return aiToolDoneMsg{
@@ -615,7 +601,7 @@ func (m interactiveModel) doAICommand(prompt string) tea.Cmd {
 		}
 
 		gw := aigateway.NewGateway(m.aiPolicy())
-		resultText, currentFile, err := executeAICommand(gw, prompt, m.aiCurrentFile, runtime)
+		resultText, currentFile, err := executeAICommand(gw, prompt, m.aiCurrentFile)
 		if err != nil {
 			m.writeAIAuditLog("local", prompt, m.aiCurrentFile, "failed", "", err.Error())
 		} else {
@@ -702,14 +688,6 @@ func (m interactiveModel) buildAIPlan(prompt string) (string, []string) {
 			}
 			steps = append(steps, "Komut otomatik çalıştırılmayacak; güvenli görev dosyası oluşturulacak.")
 
-		case isAITranscribeCommand(lower) && isAISummarizeCommand(lower):
-			steps = append(steps, "transcribe_media aracı ile medya metne dökülecek.")
-			steps = append(steps, "summarize_transcript aracı ile transcript özeti üretilecek.")
-		case isAITranscribeCommand(lower):
-			steps = append(steps, "transcribe_media aracı ile medya metne dökülecek (transcript dosyası üretilecek).")
-		case isAISummarizeCommand(lower):
-			steps = append(steps, "summarize_transcript aracı ile transcript dosyası özetlenecek (markdown çıktı üretilecek).")
-
 		case isAITrimCommand(lower):
 			startSec, endSec, err := parseTrimSecondRange(lower)
 			if err == nil {
@@ -753,7 +731,7 @@ func (m interactiveModel) buildAIPlan(prompt string) (string, []string) {
 	return strings.Join(steps, "\n"), uniqueStrings(risks)
 }
 
-func executeAICommand(gw *aigateway.Gateway, prompt string, currentFile string, runtime aiExecutionConfig) (string, string, error) {
+func executeAICommand(gw *aigateway.Gateway, prompt string, currentFile string) (string, string, error) {
 	trimmed := strings.TrimSpace(prompt)
 	if trimmed == "" {
 		return "", currentFile, fmt.Errorf("komut boş olamaz")
@@ -822,108 +800,6 @@ func executeAICommand(gw *aigateway.Gateway, prompt string, currentFile string, 
 			return "", currentFile, err
 		}
 		return fmt.Sprintf("Batch görevi üretildi (otomatik çalıştırılmadı).\nKomut: %s\nGörev dosyası: %s", command, taskPath), currentFile, nil
-	}
-
-	if isAITranscribeCommand(lower) && isAISummarizeCommand(lower) {
-		inputPath, err := resolveAIInputPath(trimmed, currentFile)
-		if err != nil {
-			return "", currentFile, err
-		}
-
-		transcribeReq := aigateway.TranscribeMediaRequest{
-			InputPath:   inputPath,
-			Provider:    runtime.Provider,
-			Model:       resolveAITranscribeModel(trimmed, runtime.Model),
-			BaseURL:     runtime.BaseURL,
-			APIKey:      runtime.APIKey,
-			Language:    parseAITranscribeLanguage(trimmed),
-			Diarization: parseAIDiarization(trimmed),
-			OnConflict:  onConflict,
-		}
-		transcribeResult, err := gw.TranscribeMedia(transcribeReq)
-		if err != nil {
-			return "", inputPath, err
-		}
-
-		transcriptPath := strings.TrimSpace(transcribeResult.TranscriptPath)
-		if transcriptPath == "" {
-			transcriptPath = strings.TrimSpace(transcribeResult.OutputPath)
-		}
-		if transcriptPath == "" {
-			return "", inputPath, fmt.Errorf("transcript dosya yolu alinamadi")
-		}
-
-		summaryReq := aigateway.SummarizeTranscriptRequest{
-			TranscriptPath: transcriptPath,
-			Provider:       runtime.Provider,
-			Model:          runtime.Model,
-			BaseURL:        runtime.BaseURL,
-			APIKey:         runtime.APIKey,
-			Style:          parseAISummaryStyle(trimmed),
-			TargetLanguage: parseAISummaryTargetLanguage(trimmed),
-			OnConflict:     onConflict,
-		}
-		summaryResult, err := gw.SummarizeTranscript(summaryReq)
-		if err != nil {
-			return "", transcriptPath, err
-		}
-
-		nextCurrentFile := transcriptPath
-		if strings.TrimSpace(summaryResult.SummaryPath) != "" {
-			nextCurrentFile = strings.TrimSpace(summaryResult.SummaryPath)
-		}
-		resultText := summarizeToolResult(transcribeResult) + "\n" + summarizeToolResult(summaryResult)
-		return resultText, nextCurrentFile, nil
-	}
-
-	if isAISummarizeCommand(lower) {
-		transcriptPath, err := resolveAITranscriptPath(trimmed, currentFile)
-		if err != nil {
-			return "", currentFile, err
-		}
-		res, err := gw.SummarizeTranscript(aigateway.SummarizeTranscriptRequest{
-			TranscriptPath: transcriptPath,
-			Provider:       runtime.Provider,
-			Model:          runtime.Model,
-			BaseURL:        runtime.BaseURL,
-			APIKey:         runtime.APIKey,
-			Style:          parseAISummaryStyle(trimmed),
-			TargetLanguage: parseAISummaryTargetLanguage(trimmed),
-			OnConflict:     onConflict,
-		})
-		if err != nil {
-			return "", transcriptPath, err
-		}
-		nextCurrentFile := transcriptPath
-		if strings.TrimSpace(res.SummaryPath) != "" {
-			nextCurrentFile = strings.TrimSpace(res.SummaryPath)
-		}
-		return summarizeToolResult(res), nextCurrentFile, nil
-	}
-
-	if isAITranscribeCommand(lower) {
-		inputPath, err := resolveAIInputPath(trimmed, currentFile)
-		if err != nil {
-			return "", currentFile, err
-		}
-		res, err := gw.TranscribeMedia(aigateway.TranscribeMediaRequest{
-			InputPath:   inputPath,
-			Provider:    runtime.Provider,
-			Model:       resolveAITranscribeModel(trimmed, runtime.Model),
-			BaseURL:     runtime.BaseURL,
-			APIKey:      runtime.APIKey,
-			Language:    parseAITranscribeLanguage(trimmed),
-			Diarization: parseAIDiarization(trimmed),
-			OnConflict:  onConflict,
-		})
-		if err != nil {
-			return "", inputPath, err
-		}
-		nextCurrentFile := inputPath
-		if strings.TrimSpace(res.TranscriptPath) != "" {
-			nextCurrentFile = strings.TrimSpace(res.TranscriptPath)
-		}
-		return summarizeToolResult(res), nextCurrentFile, nil
 	}
 
 	inputPath, err := resolveAIInputPath(trimmed, currentFile)
@@ -1000,7 +876,7 @@ func executeAICommand(gw *aigateway.Gateway, prompt string, currentFile string, 
 		return summarizeToolResult(res), inputPath, nil
 
 	default:
-		return "Komut anlaşılamadı. Örn: dönüştür, kırp, ses çıkar, transkript al, özetle, bilgi al. Gerekirse önce /dosya <yol> kullan.", inputPath, nil
+		return "Komut anlaşılamadı. Örn: dönüştür, kırp, ses çıkar, bilgi al. Gerekirse önce /dosya <yol> kullan.", inputPath, nil
 	}
 }
 
@@ -1049,27 +925,6 @@ func resolveAIInputPath(prompt string, currentFile string) (string, error) {
 		return currentFile, nil
 	}
 	return "", fmt.Errorf("işlenecek dosya bulunamadı. Önce /dosya <yol> yazın veya komutta dosya yolu verin")
-}
-
-func resolveAITranscriptPath(prompt string, currentFile string) (string, error) {
-	if path := parseQuotedPath(prompt); path != "" {
-		return path, nil
-	}
-	if path := parseExistingPathToken(prompt); path != "" {
-		return path, nil
-	}
-	if strings.TrimSpace(currentFile) == "" {
-		return "", fmt.Errorf("transcript dosyasi bulunamadi. Komutta transcript yolu verin veya once transcribe calistirin")
-	}
-
-	ext := converter.NormalizeFormat(filepath.Ext(currentFile))
-	switch ext {
-	case "txt", "md", "srt", "vtt":
-		return currentFile, nil
-	default:
-		// transcript uzantısı olmayabilir; kullanıcı akışını kesmemek için yine de kullan.
-		return currentFile, nil
-	}
 }
 
 func parseQuotedPath(prompt string) string {
@@ -1128,24 +983,6 @@ func isAIWatchCommand(lower string) bool {
 	return strings.Contains(lower, "watch") || strings.Contains(lower, "izle")
 }
 
-func isAITranscribeCommand(lower string) bool {
-	return strings.Contains(lower, "transcribe") ||
-		strings.Contains(lower, "transkript") ||
-		strings.Contains(lower, "metne dök") ||
-		strings.Contains(lower, "metne dok") ||
-		strings.Contains(lower, "metne donustur") ||
-		strings.Contains(lower, "metne dönüştür") ||
-		strings.Contains(lower, "sesi metne") ||
-		strings.Contains(lower, "speech to text")
-}
-
-func isAISummarizeCommand(lower string) bool {
-	return strings.Contains(lower, "özet") ||
-		strings.Contains(lower, "ozet") ||
-		strings.Contains(lower, "summarize") ||
-		strings.Contains(lower, "summary")
-}
-
 func parseAITrimMode(prompt string) string {
 	lower := strings.ToLower(strings.TrimSpace(prompt))
 	if lower == "" {
@@ -1183,64 +1020,6 @@ func parseAIMetadataMode(prompt string) string {
 		return converter.MetadataPreserve
 	}
 	return converter.MetadataAuto
-}
-
-func parseAITranscribeLanguage(prompt string) string {
-	lower := strings.ToLower(strings.TrimSpace(prompt))
-	switch {
-	case strings.Contains(lower, "turkce"), strings.Contains(lower, "türkçe"), strings.Contains(lower, "turkish"):
-		return "tr"
-	case strings.Contains(lower, "ingilizce"), strings.Contains(lower, "english"):
-		return "en"
-	default:
-		return ""
-	}
-}
-
-func resolveAITranscribeModel(prompt string, runtimeModel string) string {
-	lower := strings.ToLower(strings.TrimSpace(prompt))
-	if strings.Contains(lower, "whisper-1") {
-		return "whisper-1"
-	}
-	if strings.Contains(lower, "gpt-4o-mini-transcribe") {
-		return "gpt-4o-mini-transcribe"
-	}
-	rt := strings.TrimSpace(runtimeModel)
-	if strings.Contains(strings.ToLower(rt), "transcribe") || strings.Contains(strings.ToLower(rt), "whisper") {
-		return rt
-	}
-	return ""
-}
-
-func parseAIDiarization(prompt string) bool {
-	lower := strings.ToLower(strings.TrimSpace(prompt))
-	return strings.Contains(lower, "diarization") || strings.Contains(lower, "konusmaci ayrimi") || strings.Contains(lower, "konuşmacı ayrımı")
-}
-
-func parseAISummaryStyle(prompt string) string {
-	lower := strings.ToLower(strings.TrimSpace(prompt))
-	switch {
-	case strings.Contains(lower, "madde"), strings.Contains(lower, "bullet"):
-		return "bullet_points"
-	case strings.Contains(lower, "detay"), strings.Contains(lower, "ayrintili"), strings.Contains(lower, "ayrıntılı"):
-		return "detailed"
-	case strings.Contains(lower, "kisa"), strings.Contains(lower, "kısa"), strings.Contains(lower, "short"):
-		return "short"
-	default:
-		return ""
-	}
-}
-
-func parseAISummaryTargetLanguage(prompt string) string {
-	lower := strings.ToLower(strings.TrimSpace(prompt))
-	switch {
-	case strings.Contains(lower, "turkce"), strings.Contains(lower, "türkçe"), strings.Contains(lower, "turkish"):
-		return "tr"
-	case strings.Contains(lower, "ingilizce"), strings.Contains(lower, "english"):
-		return "en"
-	default:
-		return ""
-	}
 }
 
 func parseAIRecursive(prompt string) bool {
