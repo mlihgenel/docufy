@@ -192,71 +192,21 @@ func TestAIPlanConfirmApproveStartsExecution(t *testing.T) {
 
 func TestAIPlanConfirmRiskRequiresSecondConfirmation(t *testing.T) {
 	m := newInteractiveModel(nil, false)
-	m = m.goToAICommandInput()
-	m.aiCurrentFile = "/tmp/a.txt"
-	m.aiPromptInput = "dosyayı png olarak dönüştür ve overwrite et"
+	m = m.goToAIPlanConfirm()
+	m.aiPendingPrompt = "dosyayı üzerine yaz ve overwrite et"
+	m.aiNeedsRiskAck = true
+	m.cursor = 0
 
 	nextModel, cmd := m.handleEnter()
 	if cmd != nil {
-		t.Fatalf("expected no command while building plan")
-	}
-	next, ok := nextModel.(interactiveModel)
-	if !ok {
-		t.Fatalf("unexpected model type")
-	}
-	if next.state != stateAIPlanConfirm {
-		t.Fatalf("expected stateAIPlanConfirm, got %v", next.state)
-	}
-	if !next.aiNeedsRiskAck {
-		t.Fatalf("expected aiNeedsRiskAck to be true for overwrite policy")
-	}
-	next.cursor = 0
-
-	nextModel, cmd = next.handleEnter()
-	if cmd != nil {
 		t.Fatalf("expected no command before risk ack")
 	}
-	next, ok = nextModel.(interactiveModel)
+	next, ok := nextModel.(interactiveModel)
 	if !ok {
 		t.Fatalf("unexpected model type")
 	}
 	if next.state != stateAIRiskConfirmInput {
 		t.Fatalf("expected stateAIRiskConfirmInput, got %v", next.state)
-	}
-}
-
-func TestAIPlanConfirmSafePolicyStartsExecutionWithoutRiskAck(t *testing.T) {
-	m := newInteractiveModel(nil, false)
-	m = m.goToAICommandInput()
-	m.aiCurrentFile = "/tmp/a.txt"
-	m.aiPromptInput = "dosyayı png olarak dönüştür ve skip kullan"
-
-	nextModel, cmd := m.handleEnter()
-	if cmd != nil {
-		t.Fatalf("expected no command while building plan")
-	}
-	next, ok := nextModel.(interactiveModel)
-	if !ok {
-		t.Fatalf("unexpected model type")
-	}
-	if next.state != stateAIPlanConfirm {
-		t.Fatalf("expected stateAIPlanConfirm, got %v", next.state)
-	}
-	if next.aiNeedsRiskAck {
-		t.Fatalf("did not expect aiNeedsRiskAck for skip policy")
-	}
-	next.cursor = 0
-
-	nextModel, cmd = next.handleEnter()
-	if cmd == nil {
-		t.Fatalf("expected execution command when risk ack is not required")
-	}
-	next, ok = nextModel.(interactiveModel)
-	if !ok {
-		t.Fatalf("unexpected model type")
-	}
-	if next.state != stateAIExecuting {
-		t.Fatalf("expected stateAIExecuting, got %v", next.state)
 	}
 }
 

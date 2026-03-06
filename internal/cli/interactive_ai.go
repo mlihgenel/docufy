@@ -444,13 +444,15 @@ func aiNeedsHighRiskAck(prompt string) bool {
 	if lower == "" {
 		return false
 	}
-	if parseAIOnConflictPolicy(prompt) == converter.ConflictOverwrite {
-		return true
-	}
-	if isAITrimCommand(lower) && parseAITrimMode(prompt) == "remove" {
-		return true
-	}
-	return false
+	return strings.Contains(lower, "overwrite") ||
+		strings.Contains(lower, "üzerine") ||
+		strings.Contains(lower, "uzerine") ||
+		strings.Contains(lower, "remove") ||
+		strings.Contains(lower, "sil") ||
+		strings.Contains(lower, "batch") ||
+		strings.Contains(lower, "toplu") ||
+		strings.Contains(lower, "watch") ||
+		strings.Contains(lower, "izle")
 }
 
 func loadStoredAIAPIKey(provider string) string {
@@ -661,37 +663,15 @@ func (m interactiveModel) buildAIPlan(prompt string) (string, []string) {
 	lower := strings.ToLower(trimmed)
 	steps := make([]string, 0, 4)
 	risks := make([]string, 0, 3)
-	onConflict := parseAIOnConflictPolicy(trimmed)
-	trimMode := parseAITrimMode(trimmed)
 
 	if strings.HasPrefix(lower, "/dosya ") || strings.HasPrefix(lower, "/file ") {
 		steps = append(steps, "Aktif dosya güncellenecek ve doğrulama için get_file_info çağrılacak.")
 	} else {
 		switch {
-		case isAIWatchCommand(lower):
-			dir, err := resolveAIDirectoryPath(trimmed, m.aiCurrentFile)
-			from, to := parseAIFormatPair(trimmed)
-			if err == nil {
-				steps = append(steps, fmt.Sprintf("Watch görevi üretilecek: klasör=%s from=%s to=%s.", dir, fromOrUnknown(from), fromOrUnknown(to)))
-			} else {
-				steps = append(steps, "Watch görevi üretilecek (klasör yolu komuttan doğrulanacak).")
-			}
-			steps = append(steps, "Komut otomatik çalıştırılmayacak; güvenli görev dosyası oluşturulacak.")
-
-		case isAIBatchCommand(lower):
-			dir, err := resolveAIDirectoryPath(trimmed, m.aiCurrentFile)
-			from, to := parseAIFormatPair(trimmed)
-			if err == nil {
-				steps = append(steps, fmt.Sprintf("Batch görevi üretilecek: klasör=%s from=%s to=%s.", dir, fromOrUnknown(from), fromOrUnknown(to)))
-			} else {
-				steps = append(steps, "Batch görevi üretilecek (klasör yolu komuttan doğrulanacak).")
-			}
-			steps = append(steps, "Komut otomatik çalıştırılmayacak; güvenli görev dosyası oluşturulacak.")
-
 		case isAITrimCommand(lower):
 			startSec, endSec, err := parseTrimSecondRange(lower)
 			if err == nil {
-				steps = append(steps, fmt.Sprintf("trim_video aracı %s modunda %d-%d saniye aralığı ile çalıştırılacak.", trimMode, startSec, endSec))
+				steps = append(steps, fmt.Sprintf("trim_video aracı clip modunda %d-%d saniye aralığı ile çalıştırılacak.", startSec, endSec))
 			} else {
 				steps = append(steps, "trim_video aracı ile kırpma denenecek (zaman aralığı doğrulanacak).")
 			}
@@ -700,7 +680,7 @@ func (m interactiveModel) buildAIPlan(prompt string) (string, []string) {
 			if target == "" {
 				target = "mp3"
 			}
-			steps = append(steps, fmt.Sprintf("extract_audio aracı %s formatında çalıştırılacak (on_conflict: %s).", target, onConflict))
+			steps = append(steps, fmt.Sprintf("extract_audio aracı %s formatında çalıştırılacak.", target))
 		case isAIInfoCommand(lower):
 			steps = append(steps, "get_file_info aracı ile medya bilgileri alınacak.")
 		case isAIConvertCommand(lower):
@@ -708,7 +688,7 @@ func (m interactiveModel) buildAIPlan(prompt string) (string, []string) {
 			if target == "" {
 				steps = append(steps, "convert_file aracı ile dönüştürme denenecek (hedef format komuttan çözümlenecek).")
 			} else {
-				steps = append(steps, fmt.Sprintf("convert_file aracı %s formatına dönüştürmek için çalıştırılacak (on_conflict: %s).", target, onConflict))
+				steps = append(steps, fmt.Sprintf("convert_file aracı %s formatına dönüştürmek için çalıştırılacak.", target))
 			}
 		default:
 			steps = append(steps, "Komut yorumlanacak; desteklenen bir işlemse ilgili tool çağrılacak.")
@@ -718,14 +698,14 @@ func (m interactiveModel) buildAIPlan(prompt string) (string, []string) {
 	if strings.TrimSpace(m.aiCurrentFile) == "" && parseQuotedPath(trimmed) == "" && parseExistingPathToken(trimmed) == "" && !strings.HasPrefix(lower, "/dosya ") && !strings.HasPrefix(lower, "/file ") {
 		risks = append(risks, "Aktif dosya belirtilmemiş görünüyor; önce /dosya <yol> vermen gerekebilir.")
 	}
-	if onConflict == converter.ConflictOverwrite {
-		risks = append(risks, "on_conflict=overwrite: mevcut çıktı dosyası üzerine yazılabilir.")
+	if strings.Contains(lower, "overwrite") || strings.Contains(lower, "uzerine") || strings.Contains(lower, "üzerine") {
+		risks = append(risks, "Üzerine yazma talebi tespit edildi.")
 	}
-	if trimMode == "remove" && isAITrimCommand(lower) {
-		risks = append(risks, "trim mode=remove: videodan aralık silme talebi var.")
+	if strings.Contains(lower, "remove") || strings.Contains(lower, "sil") {
+		risks = append(risks, "Silme/remove isteği tespit edildi. Desteklenmeyen modlar güvenli şekilde reddedilir.")
 	}
-	if isAIBatchCommand(lower) || isAIWatchCommand(lower) {
-		risks = append(risks, "Toplu/watch komutları otomatik icra edilmez; görev dosyası üretilir.")
+	if strings.Contains(lower, "batch") || strings.Contains(lower, "toplu") || strings.Contains(lower, "watch") || strings.Contains(lower, "izle") {
+		risks = append(risks, "Toplu/watch akışı istendi; AI modunda adım adım doğrulama gerekebilir.")
 	}
 
 	return strings.Join(steps, "\n"), uniqueStrings(risks)
@@ -737,8 +717,6 @@ func executeAICommand(gw *aigateway.Gateway, prompt string, currentFile string) 
 		return "", currentFile, fmt.Errorf("komut boş olamaz")
 	}
 	lower := strings.ToLower(trimmed)
-	onConflict := parseAIOnConflictPolicy(trimmed)
-	trimMode := parseAITrimMode(trimmed)
 
 	if strings.HasPrefix(lower, "/dosya ") || strings.HasPrefix(lower, "/file ") {
 		path := strings.TrimSpace(trimmed[strings.Index(trimmed, " "):])
@@ -751,54 +729,6 @@ func executeAICommand(gw *aigateway.Gateway, prompt string, currentFile string) 
 			return "", currentFile, err
 		}
 		return fmt.Sprintf("Aktif dosya ayarlandı: %s", res.InputPath), res.InputPath, nil
-	}
-
-	if isAIWatchCommand(lower) {
-		dir, err := resolveAIDirectoryPath(trimmed, currentFile)
-		if err != nil {
-			return "", currentFile, err
-		}
-		validatedDir, err := gw.ValidatePath(dir)
-		if err != nil {
-			return "", currentFile, err
-		}
-		from, to := parseAIFormatPair(trimmed)
-		if from == "" || to == "" {
-			return "", currentFile, fmt.Errorf("watch icin kaynak/hedef format gerekli (örn: from mp4 to gif)")
-		}
-		onConflict := parseAIOnConflictPolicy(trimmed)
-		metadataMode := parseAIMetadataMode(trimmed)
-		recursive := parseAIRecursive(trimmed)
-		command := buildAIWatchCommand(validatedDir, from, to, onConflict, metadataMode, recursive)
-		taskPath, err := writeAITaskFile("watch", trimmed, command)
-		if err != nil {
-			return "", currentFile, err
-		}
-		return fmt.Sprintf("Watch görevi üretildi (otomatik çalıştırılmadı).\nKomut: %s\nGörev dosyası: %s", command, taskPath), currentFile, nil
-	}
-
-	if isAIBatchCommand(lower) {
-		dir, err := resolveAIDirectoryPath(trimmed, currentFile)
-		if err != nil {
-			return "", currentFile, err
-		}
-		validatedDir, err := gw.ValidatePath(dir)
-		if err != nil {
-			return "", currentFile, err
-		}
-		from, to := parseAIFormatPair(trimmed)
-		if from == "" || to == "" {
-			return "", currentFile, fmt.Errorf("batch icin kaynak/hedef format gerekli (örn: from png to webp)")
-		}
-		onConflict := parseAIOnConflictPolicy(trimmed)
-		metadataMode := parseAIMetadataMode(trimmed)
-		recursive := parseAIRecursive(trimmed)
-		command := buildAIBatchCommand(validatedDir, from, to, onConflict, metadataMode, recursive)
-		taskPath, err := writeAITaskFile("batch", trimmed, command)
-		if err != nil {
-			return "", currentFile, err
-		}
-		return fmt.Sprintf("Batch görevi üretildi (otomatik çalıştırılmadı).\nKomut: %s\nGörev dosyası: %s", command, taskPath), currentFile, nil
 	}
 
 	inputPath, err := resolveAIInputPath(trimmed, currentFile)
@@ -815,14 +745,14 @@ func executeAICommand(gw *aigateway.Gateway, prompt string, currentFile string) 
 		target := parseTargetFormat(trimmed)
 		res, err := gw.TrimVideo(aigateway.TrimVideoRequest{
 			InputPath:    inputPath,
-			Mode:         trimMode,
+			Mode:         "clip",
 			Start:        strconv.Itoa(startSec),
 			End:          strconv.Itoa(endSec),
 			To:           target,
 			Codec:        "auto",
 			Quality:      0,
 			MetadataMode: converter.MetadataAuto,
-			OnConflict:   onConflict,
+			OnConflict:   converter.ConflictVersioned,
 		})
 		if err != nil {
 			return "", inputPath, err
@@ -840,7 +770,7 @@ func executeAICommand(gw *aigateway.Gateway, prompt string, currentFile string) 
 			To:           target,
 			Copy:         copyMode,
 			MetadataMode: converter.MetadataAuto,
-			OnConflict:   onConflict,
+			OnConflict:   converter.ConflictVersioned,
 		})
 		if err != nil {
 			return "", inputPath, err
@@ -867,7 +797,7 @@ func executeAICommand(gw *aigateway.Gateway, prompt string, currentFile string) 
 			To:           target,
 			Quality:      0,
 			MetadataMode: converter.MetadataAuto,
-			OnConflict:   onConflict,
+			OnConflict:   converter.ConflictVersioned,
 		})
 		if err != nil {
 			return "", inputPath, err
@@ -972,219 +902,6 @@ func isAIInfoCommand(lower string) bool {
 
 func isAIConvertCommand(lower string) bool {
 	return strings.Contains(lower, "dönüştür") || strings.Contains(lower, "donustur") || strings.Contains(lower, "çevir") || strings.Contains(lower, "cevir") || strings.Contains(lower, "convert")
-}
-
-func isAIBatchCommand(lower string) bool {
-	return strings.Contains(lower, "batch") || strings.Contains(lower, "toplu")
-}
-
-func isAIWatchCommand(lower string) bool {
-	return strings.Contains(lower, "watch") || strings.Contains(lower, "izle")
-}
-
-func parseAITrimMode(prompt string) string {
-	lower := strings.ToLower(strings.TrimSpace(prompt))
-	if lower == "" {
-		return "clip"
-	}
-	if strings.Contains(lower, "remove") || strings.Contains(lower, "sil") {
-		return "remove"
-	}
-	return "clip"
-}
-
-func parseAIOnConflictPolicy(prompt string) string {
-	lower := strings.ToLower(strings.TrimSpace(prompt))
-	if lower == "" {
-		return converter.ConflictVersioned
-	}
-	if strings.Contains(lower, "overwrite") || strings.Contains(lower, "üzerine yaz") || strings.Contains(lower, "uzerine yaz") {
-		return converter.ConflictOverwrite
-	}
-	if strings.Contains(lower, "skip") || strings.Contains(lower, "atla") {
-		return converter.ConflictSkip
-	}
-	return converter.ConflictVersioned
-}
-
-func parseAIMetadataMode(prompt string) string {
-	lower := strings.ToLower(strings.TrimSpace(prompt))
-	if lower == "" {
-		return converter.MetadataAuto
-	}
-	if strings.Contains(lower, "strip metadata") || strings.Contains(lower, "metadata temizle") || strings.Contains(lower, "metadata sil") {
-		return converter.MetadataStrip
-	}
-	if strings.Contains(lower, "preserve metadata") || strings.Contains(lower, "metadata koru") {
-		return converter.MetadataPreserve
-	}
-	return converter.MetadataAuto
-}
-
-func parseAIRecursive(prompt string) bool {
-	lower := strings.ToLower(strings.TrimSpace(prompt))
-	return strings.Contains(lower, "recursive") || strings.Contains(lower, "alt klas") || strings.Contains(lower, "alt dizin")
-}
-
-func parseAIFormatPair(prompt string) (string, string) {
-	lower := strings.ToLower(prompt)
-	patterns := []*regexp.Regexp{
-		regexp.MustCompile(`\bfrom\s+([a-z0-9]+)\s+to\s+([a-z0-9]+)\b`),
-		regexp.MustCompile(`\b([a-z0-9]+)'?den\s+([a-z0-9]+)'?ye\b`),
-	}
-
-	for _, re := range patterns {
-		m := re.FindStringSubmatch(lower)
-		if len(m) > 2 {
-			from := converter.NormalizeFormat(m[1])
-			to := converter.NormalizeFormat(m[2])
-			if from != "" && to != "" {
-				return from, to
-			}
-		}
-	}
-
-	from := parseAISourceFormat(prompt)
-	to := parseTargetFormat(prompt)
-	return from, to
-}
-
-func parseAISourceFormat(prompt string) string {
-	lower := strings.ToLower(prompt)
-	patterns := []*regexp.Regexp{
-		regexp.MustCompile(`\bfrom\s+([a-z0-9]+)\b`),
-		regexp.MustCompile(`\b([a-z0-9]+)'?den\b`),
-	}
-
-	for _, re := range patterns {
-		m := re.FindStringSubmatch(lower)
-		if len(m) > 1 {
-			if normalized := converter.NormalizeFormat(m[1]); normalized != "" {
-				return normalized
-			}
-		}
-	}
-	return ""
-}
-
-func resolveAIDirectoryPath(prompt string, currentFile string) (string, error) {
-	if path := parseQuotedDirectory(prompt); path != "" {
-		return path, nil
-	}
-	if path := parseExistingDirectoryToken(prompt); path != "" {
-		return path, nil
-	}
-	if strings.TrimSpace(currentFile) != "" {
-		return filepath.Dir(currentFile), nil
-	}
-	return "", fmt.Errorf("islenecek klasor bulunamadi. Komutta klasor yolu verin veya once /dosya <yol> kullanin")
-}
-
-func parseQuotedDirectory(prompt string) string {
-	re := regexp.MustCompile(`"([^"]+)"|'([^']+)'`)
-	matches := re.FindAllStringSubmatch(prompt, -1)
-	for _, match := range matches {
-		candidate := strings.TrimSpace(match[1])
-		if candidate == "" {
-			candidate = strings.TrimSpace(match[2])
-		}
-		if candidate == "" {
-			continue
-		}
-		if info, err := os.Stat(candidate); err == nil && info.IsDir() {
-			return candidate
-		}
-	}
-	return ""
-}
-
-func parseExistingDirectoryToken(prompt string) string {
-	fields := strings.Fields(prompt)
-	for _, field := range fields {
-		candidate := strings.Trim(field, `"'.,;:!?()[]{}<>`)
-		if candidate == "" {
-			continue
-		}
-		if info, err := os.Stat(candidate); err == nil && info.IsDir() {
-			return candidate
-		}
-	}
-	return ""
-}
-
-func buildAIBatchCommand(dir string, from string, to string, onConflict string, metadataMode string, recursive bool) string {
-	parts := []string{
-		"docufy", "batch", quoteShellArg(dir),
-		"--from", from,
-		"--to", to,
-		"--on-conflict", onConflict,
-	}
-	if recursive {
-		parts = append(parts, "--recursive")
-	}
-	switch metadataMode {
-	case converter.MetadataStrip:
-		parts = append(parts, "--strip-metadata")
-	case converter.MetadataPreserve:
-		parts = append(parts, "--preserve-metadata")
-	}
-	return strings.Join(parts, " ")
-}
-
-func buildAIWatchCommand(dir string, from string, to string, onConflict string, metadataMode string, recursive bool) string {
-	parts := []string{
-		"docufy", "watch", quoteShellArg(dir),
-		"--from", from,
-		"--to", to,
-		"--on-conflict", onConflict,
-	}
-	if recursive {
-		parts = append(parts, "--recursive")
-	}
-	switch metadataMode {
-	case converter.MetadataStrip:
-		parts = append(parts, "--strip-metadata")
-	case converter.MetadataPreserve:
-		parts = append(parts, "--preserve-metadata")
-	}
-	return strings.Join(parts, " ")
-}
-
-func writeAITaskFile(kind string, prompt string, command string) (string, error) {
-	wd, err := os.Getwd()
-	if err != nil {
-		return "", err
-	}
-	taskDir := filepath.Join(wd, ".docufy", "tasks")
-	if err := os.MkdirAll(taskDir, 0755); err != nil {
-		return "", err
-	}
-	timestamp := time.Now().UTC().Format("20060102-150405.000000000")
-	file := filepath.Join(taskDir, fmt.Sprintf("%s-%s.md", kind, timestamp))
-	content := fmt.Sprintf(
-		"# Docufy AI Task (%s)\n\nPrompt:\n%s\n\nCommand:\n%s\n",
-		kind,
-		prompt,
-		command,
-	)
-	if err := os.WriteFile(file, []byte(content), 0644); err != nil {
-		return "", err
-	}
-	return file, nil
-}
-
-func quoteShellArg(value string) string {
-	if value == "" {
-		return "''"
-	}
-	return "'" + strings.ReplaceAll(value, "'", "'\"'\"'") + "'"
-}
-
-func fromOrUnknown(value string) string {
-	if strings.TrimSpace(value) == "" {
-		return "?"
-	}
-	return value
 }
 
 func parseTrimSecondRange(promptLower string) (int, int, error) {
