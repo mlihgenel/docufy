@@ -1,10 +1,6 @@
-# Docufy
-
 <p align="center">
-  <img src="docs/assets/docufy.gif" alt="Docufy Arayüzü">
-</p> 
-
-
+  <img src="docs/assets/docufy-white-logo.svg" alt="Docufy logo" width="600">
+</p>
 
 <p align="center">
   Belgeleri, görselleri, sesleri ve videoları tamamen yerel ortamda dönüştüren modern bir CLI/TUI aracı.
@@ -14,10 +10,44 @@
   <img src="https://img.shields.io/badge/Go-1.25+-00ADD8?style=flat-square&logo=go" alt="Go Version">
   <img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" alt="License">
   <img src="https://img.shields.io/badge/Platform-macOS%20%7C%20Linux%20%7C%20Windows-blue?style=flat-square" alt="Platform">
+</p>
+
+<p align="center">
+  <a href="https://github.com/mlihgenel/docufy/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/mlihgenel/docufy/ci.yml?branch=main&style=flat-square&label=CI" alt="CI Status"></a>
+  <a href="https://github.com/mlihgenel/docufy/releases"><img src="https://img.shields.io/github/v/release/mlihgenel/docufy?style=flat-square" alt="Latest Release"></a>
   <a href="https://goreportcard.com/report/github.com/mlihgenel/docufy"><img src="https://goreportcard.com/badge/github.com/mlihgenel/docufy?style=flat-square" alt="Go Report Card"></a>
 </p>
 
-## İçindekiler
+<p align="center">
+  <a href="#kurulum"><strong>Kurulum</strong></a> ·
+  <a href="#hızlı-başlangıç"><strong>Hızlı Başlangıç</strong></a> ·
+  <a href="#desteklenen-formatlar"><strong>Desteklenen Formatlar</strong></a>
+</p>
+
+<p align="center">
+  <img src="docs/assets/mainmenu.png" alt="Docufy ana menü ekranı" width="900">
+</p>
+
+## Neden Docufy?
+
+| Başlık | Ne sağlıyor? |
+|---|---|
+| **Yerel ve Gizli** | Dönüşümler cihazda kalır; üçüncü taraf bir servise dosya yüklemeniz gerekmez. |
+| **CLI + TUI** | Script otomasyonu ile interaktif menü deneyimini aynı araçta sunar. |
+| **Batch / Watch / Pipeline** | Tek dosya, toplu klasör, klasör izleme ve çok adımlı akışları tek komut ailesinde toplar. |
+| **Belge + Görsel + Ses + Video** | Markdown/PDF'den HEIC, WebP, MP4, GIF ve ses araçlarına kadar geniş bir format yelpazesi sunar. |
+
+## Kısa Demo
+
+<p align="center">
+  <img src="docs/assets/docufy.gif" alt="Docufy kullanım demosu">
+</p>
+
+<details>
+<summary><strong>İçindekiler</strong></summary>
+
+- [Neden Docufy?](#neden-docufy)
+- [Kısa Demo](#kısa-demo)
 - [Genel Bakış](#genel-bakış)
 - [Özellikler](#özellikler)
 - [Kurulum](#kurulum)
@@ -35,6 +65,8 @@
 - [Proje Yapısı](#proje-yapısı)
 - [Katkı](#katkı)
 - [Lisans](#lisans)
+
+</details>
 
 ## Genel Bakış
 Docufy, dosya dönüştürme işlemlerini internet servislerine yükleme yapmadan yerel makinede gerçekleştiren bir komut satırı uygulamasıdır.
