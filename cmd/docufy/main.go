@@ -8,7 +8,7 @@ import (
 
 var (
 	// ldflags ile override edilebilir:
-	//   -X main.version=1.5.0 -X main.buildDate=2026-02-21T12:00:00Z
+	//   -X main.version=2.1.0 -X main.buildDate=2026-03-07T12:00:00Z
 	version   = "dev"
 	buildDate = ""
 )
