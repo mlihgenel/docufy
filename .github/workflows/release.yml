@@ -1,0 +1,96 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build And Publish
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Install FFmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg zip
+
+      - name: Run Tests
+        run: go test ./...
+
+      - name: Build Release Artifacts
+        env:
+          VERSION: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+
+          VERSION="${VERSION#v}"
+          BUILD_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          mkdir -p dist
+
+          while read -r GOOS GOARCH ARCHIVE; do
+            [ -z "$GOOS" ] && continue
+
+            DIR_NAME="docufy_${VERSION}_${GOOS}_${GOARCH}"
+            OUT_DIR="dist/${DIR_NAME}"
+            BIN_NAME="docufy"
+
+            if [ "$GOOS" = "windows" ]; then
+              BIN_NAME="docufy.exe"
+            fi
+
+            mkdir -p "$OUT_DIR"
+            CGO_ENABLED=0 GOOS="$GOOS" GOARCH="$GOARCH" \
+              go build -buildvcs=false -trimpath \
+              -ldflags "-s -w -X main.version=${VERSION} -X main.buildDate=${BUILD_DATE}" \
+              -o "${OUT_DIR}/${BIN_NAME}" ./cmd/docufy
+
+            cp README.md LICENSE "$OUT_DIR/"
+
+            if [ "$ARCHIVE" = "zip" ]; then
+              (
+                cd dist
+                zip -rq "${DIR_NAME}.zip" "${DIR_NAME}"
+              )
+            else
+              tar -C dist -czf "dist/${DIR_NAME}.tar.gz" "${DIR_NAME}"
+            fi
+
+            rm -rf "$OUT_DIR"
+          done <<'TARGETS'
+          darwin amd64 tar.gz
+          darwin arm64 tar.gz
+          linux amd64 tar.gz
+          linux arm64 tar.gz
+          windows amd64 zip
+          windows arm64 zip
+          TARGETS
+
+          (
+            cd dist
+            shasum -a 256 *.tar.gz *.zip > checksums.txt
+          )
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/*.tar.gz
+            dist/*.zip
+            dist/checksums.txt
+          generate_release_notes: true

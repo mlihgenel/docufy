@@ -129,7 +129,77 @@ func Execute(spec Spec, cfg ExecuteConfig) (Result, error) {
 				Verbose:      cfg.Verbose,
 				MetadataMode: stepMetadata,
 			}
+			if err := converter.EnsureParentDir(output); err != nil {
+				sr := StepResult{
+					Index:    i + 1,
+					Type:     stepType,
+					Input:    currentInput,
+					Output:   output,
+					Duration: time.Since(stepStart),
+					Success:  false,
+					Error:    err.Error(),
+				}
+				result.Steps = append(result.Steps, sr)
+				result.EndedAt = time.Now()
+				result.Duration = result.EndedAt.Sub(result.StartedAt)
+				return result, err
+			}
 			err = conv.Convert(currentInput, output, opts)
+			if err != nil {
+				sr := StepResult{
+					Index:    i + 1,
+					Type:     stepType,
+					Input:    currentInput,
+					Output:   output,
+					Duration: time.Since(stepStart),
+					Success:  false,
+					Error:    err.Error(),
+				}
+				result.Steps = append(result.Steps, sr)
+				result.EndedAt = time.Now()
+				result.Duration = result.EndedAt.Sub(result.StartedAt)
+				return result, err
+			}
+
+		case StepExtractAudio:
+			audioOut := converter.NormalizeFormat(step.To)
+			output, err = buildStepOutput(currentInput, i, audioOut, step, spec, cfg.OutputDir, tempDir, conflict, len(spec.Steps))
+			if err != nil {
+				sr := StepResult{
+					Index:    i + 1,
+					Type:     stepType,
+					Input:    currentInput,
+					Output:   output,
+					Duration: time.Since(stepStart),
+					Success:  false,
+					Error:    err.Error(),
+				}
+				result.Steps = append(result.Steps, sr)
+				result.EndedAt = time.Now()
+				result.Duration = result.EndedAt.Sub(result.StartedAt)
+				return result, err
+			}
+
+			stepMetadata := metadataMode
+			if m := converter.NormalizeMetadataMode(step.MetadataMode); m != "" {
+				stepMetadata = m
+			}
+			if err := converter.EnsureParentDir(output); err != nil {
+				sr := StepResult{
+					Index:    i + 1,
+					Type:     stepType,
+					Input:    currentInput,
+					Output:   output,
+					Duration: time.Since(stepStart),
+					Success:  false,
+					Error:    err.Error(),
+				}
+				result.Steps = append(result.Steps, sr)
+				result.EndedAt = time.Now()
+				result.Duration = result.EndedAt.Sub(result.StartedAt)
+				return result, err
+			}
+			err = runExtractAudio(currentInput, output, stepMetadata, cfg.Verbose)
 			if err != nil {
 				sr := StepResult{
 					Index:    i + 1,
@@ -153,6 +223,21 @@ func Execute(spec Spec, cfg ExecuteConfig) (Result, error) {
 			}
 			output, err = buildStepOutput(currentInput, i, audioOut, step, spec, cfg.OutputDir, tempDir, conflict, len(spec.Steps))
 			if err != nil {
+				sr := StepResult{
+					Index:    i + 1,
+					Type:     stepType,
+					Input:    currentInput,
+					Output:   output,
+					Duration: time.Since(stepStart),
+					Success:  false,
+					Error:    err.Error(),
+				}
+				result.Steps = append(result.Steps, sr)
+				result.EndedAt = time.Now()
+				result.Duration = result.EndedAt.Sub(result.StartedAt)
+				return result, err
+			}
+			if err := converter.EnsureParentDir(output); err != nil {
 				sr := StepResult{
 					Index:    i + 1,
 					Type:     stepType,
@@ -231,6 +316,28 @@ func buildStepOutput(currentInput string, stepIndex int, to string, step Step, s
 	}
 	filename := fmt.Sprintf("%s-step-%d.%s", base, stepIndex+1, to)
 	return filepath.Join(tempDir, filename), nil
+}
+
+func runExtractAudio(input string, output string, metadataMode string, verbose bool) error {
+	ffmpegPath, err := exec.LookPath("ffmpeg")
+	if err != nil {
+		return fmt.Errorf("extract-audio için ffmpeg gerekli")
+	}
+
+	args := []string{}
+	if !verbose {
+		args = append(args, "-loglevel", "error")
+	}
+	args = append(args, "-i", input, "-vn")
+	args = append(args, audioCodecArgs(converter.DetectFormat(output))...)
+	args = append(args, converter.MetadataFFmpegArgs(metadataMode)...)
+	args = append(args, "-y", output)
+
+	cmd := exec.Command(ffmpegPath, args...)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("extract-audio ffmpeg hatasi: %s\n%s", err.Error(), string(out))
+	}
+	return nil
 }
 
 func runAudioNormalize(input string, output string, step Step, defaultMetadataMode string, verbose bool) error {

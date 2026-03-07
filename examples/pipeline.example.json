@@ -3,7 +3,7 @@
   "output": "./output/final.mp3",
   "steps": [
     {
-      "type": "convert",
+      "type": "extract-audio",
       "to": "wav",
       "quality": 90
     },

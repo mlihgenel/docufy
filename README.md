@@ -30,6 +30,7 @@
 - [Harici Bağımlılıklar](#harici-bağımlılıklar)
 - [Yapılandırma](#yapılandırma)
 - [Sorun Giderme](#sorun-giderme)
+- [Release](#release)
 - [Geliştirme](#geliştirme)
 - [Proje Yapısı](#proje-yapısı)
 - [Katkı](#katkı)
@@ -286,8 +287,8 @@ docufy pipeline run ./pipeline.json --resume-from-report ./reports/pipeline.json
 | `input` | Evet | Pipeline'ın başlangıç dosyası |
 | `output` | Hayır | Son adımın nihai çıktı yolu |
 | `steps[]` | Evet | Sıralı işlem adımları |
-| `steps[].type` | Evet | `convert` veya `audio-normalize` |
-| `steps[].to` | `convert` için evet | Hedef format (`mp3`, `wav`, `pdf` vb.) |
+| `steps[].type` | Evet | `convert`, `extract-audio` veya `audio-normalize` |
+| `steps[].to` | `convert` ve `extract-audio` için evet | Hedef format (`mp3`, `wav`, `pdf` vb.) |
 | `steps[].quality` | Hayır | Adım bazlı kalite (1-100) |
 | `steps[].output` | Hayır | O adım için özel çıktı yolu |
 | `steps[].metadata_mode` | Hayır | `auto`, `preserve`, `strip` |
@@ -647,6 +648,13 @@ Linux (Debian/Ubuntu):
 ```bash
 sudo apt install ffmpeg
 ```
+
+## Release
+GitHub'a `vX.Y.Z` formatında bir tag push edildiğinde [`.github/workflows/release.yml`](.github/workflows/release.yml) otomatik olarak:
+
+- `go test ./...` çalıştırır
+- macOS, Linux ve Windows için `amd64` + `arm64` binary arşivleri üretir
+- `checksums.txt` oluşturur ve tüm artefact'ları GitHub Release'e yükler
 
 ## Geliştirme
 ```bash

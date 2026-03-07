@@ -169,6 +169,10 @@ var convertCmd = &cobra.Command{
 			ui.PrintWarning(fmt.Sprintf("Çıktı dosyası mevcut, atlandı: %s", outputFile))
 			return nil
 		}
+		if err := converter.EnsureParentDir(outputFile); err != nil {
+			ui.PrintError(fmt.Sprintf("Çıktı dizini oluşturulamadı: %s", err.Error()))
+			return err
+		}
 
 		// Dönüşüm bilgisi
 		if verbose && !jsonOutput {

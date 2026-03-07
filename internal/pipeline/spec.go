@@ -9,6 +9,7 @@ import (
 
 const (
 	StepConvert        = "convert"
+	StepExtractAudio   = "extract-audio"
 	StepAudioNormalize = "audio-normalize"
 )
 
@@ -75,6 +76,10 @@ func ValidateSpec(s Spec) error {
 		case StepConvert:
 			if strings.TrimSpace(step.To) == "" {
 				return fmt.Errorf("step[%d] convert icin to zorunlu", i)
+			}
+		case StepExtractAudio:
+			if strings.TrimSpace(step.To) == "" {
+				return fmt.Errorf("step[%d] extract-audio icin to zorunlu", i)
 			}
 		case StepAudioNormalize:
 			// opsiyonel alanlar runtime'da defaultlanır.

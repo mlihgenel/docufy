@@ -86,3 +86,18 @@ func TestResolveOutputPathConflictInvalidPolicy(t *testing.T) {
 		t.Fatalf("expected error for invalid policy")
 	}
 }
+
+func TestEnsureParentDirCreatesNestedDirectory(t *testing.T) {
+	dir := t.TempDir()
+	target := filepath.Join(dir, "nested", "deep", "out.webp")
+
+	if err := EnsureParentDir(target); err != nil {
+		t.Fatalf("EnsureParentDir failed: %v", err)
+	}
+
+	if info, err := os.Stat(filepath.Dir(target)); err != nil {
+		t.Fatalf("expected parent directory to exist: %v", err)
+	} else if !info.IsDir() {
+		t.Fatalf("expected parent path to be a directory")
+	}
+}
