@@ -104,9 +104,9 @@ a {
 
 .site-brand {
   position: relative;
-  width: 342px;
+  width: 400px;
   max-width: 42vw;
-  height: 66px;
+  height: 90px;
   display: inline-flex;
   align-items: center;
   text-decoration: none;
