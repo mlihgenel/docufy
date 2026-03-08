@@ -14,7 +14,8 @@ export const docsNav: DocNavSection[] = [
     items: [
       { title: "Kurulum", href: "/docs/kurulum/" },
       { title: "Hızlı Başlangıç", href: "/docs/hizli-baslangic/" },
-      { title: "Nasıl Çalışır", href: "/docs/nasil-calisir/" }
+      { title: "Nasıl Çalışır", href: "/docs/nasil-calisir/" },
+      { title: "Özellik ve Dönüşüm Kapsamı", href: "/docs/ozellik-ve-kapsam/" }
     ]
   },
   {

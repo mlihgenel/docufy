@@ -13,11 +13,18 @@ const navItems = [
 ];
 
 const searchKeywordsByHref: Record<string, string[]> = {
-  "/": ["home", "anasayfa", "docufy", "cli", "tui", "dosya donusturme", "file converter"],
-  "/docs/": ["docs", "dokumantasyon", "yardim", "rehber", "kilavuz", "documentation"],
-  "/docs/kurulum/": ["kurulum", "install", "yukleme", "path", "ffmpeg", "windows", "macos", "linux"],
-  "/docs/hizli-baslangic/": ["hizli baslangic", "quickstart", "ilk 10 dakika", "ornek", "temel kullanim"],
-  "/docs/nasil-calisir/": ["nasil calisir", "is akis modeli", "workflow", "komut aileleri", "mimari"],
+  "/": ["home", "ana sayfa", "docufy", "cli", "tui", "dosya dönüşüm", "file converter"],
+  "/docs/": ["docs", "dokümantasyon", "yardım", "rehber", "kılavuz", "documentation"],
+  "/docs/kurulum/": ["kurulum", "install", "yükleme", "path", "ffmpeg", "windows", "macos", "linux"],
+  "/docs/hizli-baslangic/": ["hızlı başlangıç", "quickstart", "ilk 10 dakika", "örnek", "temel kullanım"],
+  "/docs/nasil-calisir/": ["nasıl çalışır", "iş akışı modeli", "workflow", "komut aileleri", "mimari"],
+  "/docs/ozellik-ve-kapsam/": [
+    "özellik",
+    "dönüşüm kapsamı",
+    "desteklenen formatlar",
+    "format matrisi",
+    "araçlar"
+  ],
   "/docs/rehberler/tek-dosya-donusturme/": [
     "tek dosya",
     "convert",
@@ -26,17 +33,17 @@ const searchKeywordsByHref: Record<string, string[]> = {
     "webp",
     "gif",
     "pdf",
-    "format donusturme"
+    "format dönüştürme"
   ],
   "/docs/rehberler/batch-ve-watch/": [
     "batch",
     "watch",
-    "toplu donusturme",
-    "klasor izleme",
-    "otomatik donusturme",
+    "toplu dönüştürme",
+    "klasör izleme",
+    "otomatik dönüştürme",
     "watch mode"
   ],
-  "/docs/rehberler/pipeline/": ["pipeline", "json", "akis", "otomasyon", "cok adimli", "workflow dosyasi"],
+  "/docs/rehberler/pipeline/": ["pipeline", "json", "akış", "otomasyon", "çok adımlı", "workflow dosyası"],
   "/docs/rehberler/video-ve-ses/": [
     "video",
     "ses",
@@ -97,7 +104,7 @@ const docsFallbackUrl = withBase("/docs/");
               d="M10.5 3a7.5 7.5 0 0 1 5.96 12.05l4.24 4.25a1 1 0 0 1-1.41 1.41l-4.25-4.24A7.5 7.5 0 1 1 10.5 3zm0 2a5.5 5.5 0 1 0 0 11a5.5 5.5 0 0 0 0-11z"
             />
           </svg>
-          <input type="search" placeholder="Search" aria-label="Site içinde ara" data-site-search-input />
+          <input type="search" placeholder="Ara" aria-label="Site içinde ara" data-site-search-input />
         </form>
         <a class="site-header__repo" href="https://github.com/mlihgenel/docufy" target="_blank" rel="noreferrer" data-repo-stats>
           <svg class="site-header__repo-icon" viewBox="0 0 24 24" aria-hidden="true">

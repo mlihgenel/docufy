@@ -1,11 +1,11 @@
 ---
-import HomeFeatureCard from "../components/HomeFeatureCard.astro";
 import MainLayout from "../layouts/MainLayout.astro";
 import {
-  capabilityFeatures,
-  conversionScopeFeatures,
-  extraMediaFeatures,
-  videoToolFeatures
+  capabilityPillars,
+  conversionCoverage,
+  extraMediaTools,
+  homeIconPaths,
+  videoTools
 } from "../lib/home-content";
 import { withBase } from "../lib/paths";
 ---
@@ -20,7 +20,7 @@ import { withBase } from "../lib/paths";
       <h1>Yerel ortamda production-ready dosya dönüşüm ve medya iş akışları.</h1>
       <p>
         Docufy; belge, görsel, ses ve video işlemlerini tek bir araçta birleştirir. Tek dosyadan operasyonel
-        akışlara kadar modern bir dönüştürme altyapısı sunar.
+        akışlara kadar modern bir dönüşüm altyapısı sunar.
       </p>
       <div class="hero__actions">
         <a class="btn btn--primary" href={withBase("/docs/kurulum/")}>Kuruluma Başla</a>
@@ -37,35 +37,155 @@ import { withBase } from "../lib/paths";
   <section class="section section--narrow">
     <h2>Docufy ile neler yapabilirsin?</h2>
     <p class="section__lead">
-      Özellik seti sadece format dönüşümü değil; medya araçları ve operasyonel akışlar için de güçlü bir
-      temel sunar.
+      Bu bölüm ürünün çalışma modelini özetler. Format detayları bir sonraki “Dönüşüm kapsamı” bölümünde tam
+      listelenmiştir.
     </p>
-    <div class="home-grid home-grid--capabilities">
-      {capabilityFeatures.map((item) => <HomeFeatureCard item={item} variant="feature" />)}
+    <div class="capability-rows">
+      {
+        capabilityPillars.map((item) => (
+          <article class="capability-row">
+            <div class="capability-row__main">
+              <div class="capability-row__title">
+                <span class="feature-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24">
+                    <path
+                      d={homeIconPaths[item.icon]}
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="1.8"
+                    />
+                  </svg>
+                </span>
+                <h3>{item.title}</h3>
+              </div>
+              <p>{item.summary}</p>
+            </div>
+            <ul class="capability-row__points">
+              {item.points.map((point) => <li>{point}</li>)}
+            </ul>
+            <a class="capability-row__link" href={withBase(item.docHref)}>Detaylı rehber</a>
+          </article>
+        ))
+      }
     </div>
   </section>
 
   <section class="section section--narrow">
-    <h2>Dönüşüm kapsamı</h2>
-    <p class="section__lead">Kaynak ve hedef tipleri kategori bazında aşağıdaki kartlarda özetlenmiştir.</p>
-    <div class="home-grid home-grid--scope">
-      {conversionScopeFeatures.map((item) => <HomeFeatureCard item={item} variant="scope" />)}
+    <h2>Dönüşüm Kapsamı</h2>
+    <p class="section__lead">
+      Desteklenen format aileleri aşağıda kaynak ve hedef olarak eksiksiz listelenmiştir. En detaylı matris
+      ve araç davranışları için kapsam sayfasını da kullanabilirsin.
+    </p>
+    <div class="coverage-table-wrap">
+      <table class="coverage-table">
+        <thead>
+          <tr>
+            <th>Kategori</th>
+            <th>Kaynak Formatlar</th>
+            <th>Hedef Formatlar</th>
+            <th>Notlar</th>
+          </tr>
+        </thead>
+        <tbody>
+          {
+            conversionCoverage.map((item) => (
+              <tr>
+                <th scope="row">{item.category}</th>
+                <td>
+                  <ul class="coverage-cell-list">
+                    {item.sources.map((source) => <li><code>{source}</code></li>)}
+                  </ul>
+                </td>
+                <td>
+                  <ul class="coverage-cell-list">
+                    {item.targets.map((target) => <li><code>{target}</code></li>)}
+                  </ul>
+                </td>
+                <td>
+                  <ul class="coverage-cell-list coverage-cell-list--notes">
+                    {item.notes.map((note) => <li>{note}</li>)}
+                  </ul>
+                </td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+    <div class="section__actions">
+      <a class="btn btn--secondary" href={withBase("/docs/ozellik-ve-kapsam/")}>Tüm özellik ve kapsam sayfası</a>
     </div>
   </section>
 
   <section class="section section--narrow">
-    <h2>Video araçları</h2>
-    <p class="section__lead">Dönüşümün yanında düzenleme ve yardımcı medya araçları da hazır gelir.</p>
-    <div class="home-grid home-grid--tools">
-      {videoToolFeatures.map((item) => <HomeFeatureCard item={item} variant="compact" />)}
+    <h2>Video Araçları</h2>
+    <p class="section__lead">
+      Sadece format dönüştürmekle kalmaz; video üzerinde günlük işlerde gereken düzenleme araçlarını da sunar.
+    </p>
+    <div class="tool-grid">
+      {
+        videoTools.map((item) => (
+          <article class="tool-panel">
+            <div class="tool-panel__head">
+              <span class="feature-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <path
+                    d={homeIconPaths[item.icon]}
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="1.8"
+                  />
+                </svg>
+              </span>
+              <h3>{item.title}</h3>
+            </div>
+            <p>{item.summary}</p>
+            <ul class="tool-panel__points">
+              {item.points.map((point) => <li>{point}</li>)}
+            </ul>
+            <a class="tool-panel__link" href={withBase(item.docHref)}>Kullanımı gör</a>
+          </article>
+        ))
+      }
     </div>
   </section>
 
   <section class="section section--narrow">
-    <h2>Ek medya özellikleri</h2>
-    <p class="section__lead">Üretim işlerinde sık gereken optimize/normalize/otomasyon ihtiyaçlarını kapsar.</p>
-    <div class="home-grid home-grid--extras">
-      {extraMediaFeatures.map((item) => <HomeFeatureCard item={item} variant="compact" />)}
+    <h2>Ek Medya Özellikleri</h2>
+    <p class="section__lead">
+      Üretim süreçlerinde sık kullanılan optimizasyon, kalite ve otomasyon ihtiyaçlarını kapsayan ek araçlar.
+    </p>
+    <div class="tool-grid">
+      {
+        extraMediaTools.map((item) => (
+          <article class="tool-panel">
+            <div class="tool-panel__head">
+              <span class="feature-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <path
+                    d={homeIconPaths[item.icon]}
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="1.8"
+                  />
+                </svg>
+              </span>
+              <h3>{item.title}</h3>
+            </div>
+            <p>{item.summary}</p>
+            <ul class="tool-panel__points">
+              {item.points.map((point) => <li>{point}</li>)}
+            </ul>
+            <a class="tool-panel__link" href={withBase(item.docHref)}>Detaya git</a>
+          </article>
+        ))
+      }
     </div>
   </section>
 

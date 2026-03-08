@@ -1,0 +1,104 @@
+---
+import DocsLayout from "../../layouts/DocsLayout.astro";
+import { withBase } from "../../lib/paths";
+---
+
+<DocsLayout
+  title="Özellik ve Dönüşüm Kapsamı"
+  description="Docufy'deki dönüşüm aileleri, medya araçları ve operasyonel yeteneklerin toplu özeti"
+>
+  <p>
+    Bu sayfa, Docufy'nin desteklediği dönüşüm ailelerini ve uygulama özelliklerini tek yerde toplar.
+    Komut örnekleri yerine kapsamı netleştiren özet yapı kullanır; adım adım kullanım için rehber sayfalarına
+    geçebilirsin.
+  </p>
+
+  <h2>Dönüşüm kapsamı (tam liste)</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Kategori</th>
+        <th>Kaynak</th>
+        <th>Hedef</th>
+        <th>Not</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Belge / Metin</td>
+        <td><code>md, html, pdf, docx, txt, odt, rtf, csv</code></td>
+        <td><code>md, html, pdf, docx, txt, odt, rtf, csv, xlsx</code></td>
+        <td><code>csv → xlsx</code> dönüşümü desteklenir.</td>
+      </tr>
+      <tr>
+        <td>Görsel</td>
+        <td><code>png, jpg/jpeg, webp, bmp, gif, tif/tiff, ico, svg, heic, heif</code></td>
+        <td><code>png, jpg/jpeg, webp, bmp, gif, tif/tiff, ico, pdf</code></td>
+        <td><code>svg → pdf</code> ve HEIC/HEIF kaynakları desteklenir.</td>
+      </tr>
+      <tr>
+        <td>Ses (FFmpeg)</td>
+        <td><code>mp3, wav, ogg, flac, aac, m4a, wma, opus, webm</code></td>
+        <td><code>mp3, wav, ogg, flac, aac, m4a, wma, opus, webm</code></td>
+        <td>Ses dönüştürme ve normalizasyon akışlarıyla birlikte kullanılır.</td>
+      </tr>
+      <tr>
+        <td>Video (FFmpeg)</td>
+        <td><code>mp4, mov, mkv, avi, webm, m4v, wmv, flv</code></td>
+        <td><code>mp4, mov, mkv, avi, webm, m4v, wmv, flv, gif</code></td>
+        <td>Video dönüşümünde <code>gif</code> çıktısı alınabilir.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Video ve ses araçları</h2>
+  <ul>
+    <li><strong>Video Trim (clip/remove):</strong> Aralık çıkarma veya aralık silip birleştirme.</li>
+    <li><strong>Extract Audio:</strong> Videodan ses kanalını ayrı dosya olarak alma.</li>
+    <li><strong>Snapshot:</strong> Videodan saniye veya yüzde bazlı tek kare üretme.</li>
+    <li><strong>Merge:</strong> Çoklu videoyu tek çıktı halinde birleştirme.</li>
+    <li><strong>Audio Normalize:</strong> LUFS hedefiyle ses seviyesini dengeleme.</li>
+  </ul>
+
+  <h2>Ek medya ve operasyon özellikleri</h2>
+  <ul>
+    <li><strong>Boyutlandırma:</strong> Manuel ölçü (px/cm) ve preset (story, square, fullhd) desteği.</li>
+    <li><strong>Resize Modları:</strong> <code>pad</code>, <code>fit</code>, <code>fill</code>, <code>stretch</code>.</li>
+    <li><strong>Metadata Kontrolü:</strong> Koruma veya temizleme seçenekleri.</li>
+    <li><strong>Toplu İşleme:</strong> Batch, watch ve pipeline akışları.</li>
+    <li><strong>Rapor ve Devam:</strong> JSON/TXT rapor, çakışma yönetimi, kaldığı yerden devam.</li>
+    <li><strong>Bilgi Komutu:</strong> Format, codec, çözünürlük, süre ve bitrate bilgisini görüntüleme.</li>
+  </ul>
+
+  <h2>Bağımlılık ve kalite notları</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Dönüşüm/Özellik</th>
+        <th>Gereken araç</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Ses ve video dönüşümleri</td>
+        <td>FFmpeg</td>
+      </tr>
+      <tr>
+        <td><code>csv → xlsx</code> ve bazı ofis dönüşümleri</td>
+        <td>LibreOffice</td>
+      </tr>
+      <tr>
+        <td>Bazı Markdown belge akışları</td>
+        <td>Pandoc (opsiyonel, kalite için önerilir)</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p>
+    Kullanım adımları için:
+    <a href={withBase("/docs/kurulum/")}>Kurulum</a>,
+    <a href={withBase("/docs/hizli-baslangic/")}>Hızlı Başlangıç</a>,
+    <a href={withBase("/docs/rehberler/tek-dosya-donusturme/")}>Tek Dosya Dönüştürme</a>,
+    <a href={withBase("/docs/rehberler/video-ve-ses/")}>Video ve Ses</a>.
+  </p>
+</DocsLayout>
