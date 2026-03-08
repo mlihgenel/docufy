@@ -3,7 +3,13 @@ import DocsLayout from "../../../layouts/DocsLayout.astro";
 ---
 
 <DocsLayout title="Pipeline" description="Çok adımlı JSON akışlarıyla otomasyon">
-  <h2>Çalıştırma</h2>
+  <h2>Pipeline ne sağlar?</h2>
+  <p>
+    Tek komutta çok adımlı dönüşüm zinciri çalıştırmanı sağlar. Özellikle tekrarlayan üretim akışlarında
+    (ör. video dönüştür + ses çıkar + normalize) sabit ve izlenebilir bir model sunar.
+  </p>
+
+  <h2>Temel çalıştırma</h2>
   <pre><code>docufy pipeline run ./pipeline.json
 docufy pipeline run ./pipeline.json --profile social-story --strip-metadata</code></pre>
 
@@ -11,9 +17,20 @@ docufy pipeline run ./pipeline.json --profile social-story --strip-metadata</cod
   <pre><code>docufy pipeline run ./pipeline.json \
   --report json --report-file ./reports/pipeline.json</code></pre>
 
-  <h2>Resume</h2>
+  <h2>Resume ile devam</h2>
   <pre><code>docufy pipeline run ./pipeline.json \
   --resume-from-report ./reports/pipeline.json</code></pre>
+
+  <h2>Örnek pipeline spec</h2>
+  <pre><code>{`{
+  "input": "input.mp4",
+  "output": "output.mp4",
+  "steps": [
+    { "type": "convert", "to": "mp4", "quality": 84 },
+    { "type": "extract-audio", "to": "mp3" },
+    { "type": "audio-normalize", "target_lufs": -16 }
+  ]
+}`}</code></pre>
 
   <h2>Spec özeti</h2>
   <table>
@@ -40,6 +57,18 @@ docufy pipeline run ./pipeline.json --profile social-story --strip-metadata</cod
         <td>Kısmi</td>
         <td>Hedef format (adıma göre zorunluluk değişir)</td>
       </tr>
+      <tr>
+        <td><code>steps[].quality</code></td>
+        <td>Hayır</td>
+        <td>Kalite parametresi (özellikle görsel/video adımları)</td>
+      </tr>
     </tbody>
   </table>
+
+  <h2>Pipeline tasarımı için ipuçları</h2>
+  <ul>
+    <li>İlk aşamada küçük bir input ile test et.</li>
+    <li>Rapor dosyasını her koşuda sakla; hatada root-cause analizi kolaylaşır.</li>
+    <li>Takım kullanımında pipeline JSON dosyalarını versiyon kontrolünde tut.</li>
+  </ul>
 </DocsLayout>

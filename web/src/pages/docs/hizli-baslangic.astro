@@ -1,26 +1,56 @@
 ---
 import DocsLayout from "../../layouts/DocsLayout.astro";
+import { withBase } from "../../lib/paths";
 ---
 
 <DocsLayout title="Hızlı Başlangıç" description="Docufy ile ilk 10 dakika">
-  <h2>Yardım menüsü</h2>
+  <h2>1) Komut ailesini tanı</h2>
   <pre><code>docufy --help
 docufy help convert
 docufy help batch
-docufy help watch</code></pre>
+docufy help watch
+docufy help pipeline
+docufy help video
+docufy help audio</code></pre>
 
-  <h2>Tek dosya dönüştürme</h2>
+  <h2>2) Tek dosya dönüştürme</h2>
+  <p>Önce tek dosya akışını doğrulamak en güvenli başlangıçtır.</p>
   <pre><code>docufy convert rapor.md --to pdf
 docufy convert fotograf.jpeg --to png
 docufy convert klip.mp4 --to gif --quality 80</code></pre>
 
-  <h2>Toplu dönüştürme</h2>
+  <h2>3) Toplu dönüşüm (batch)</h2>
+  <p>Batch, klasör bazlı işlemlerde planlama ve raporlama sağlar.</p>
   <pre><code>docufy batch ./resimler --from jpg --to png --recursive
-docufy batch ./resimler --from jpg --to png --dry-run</code></pre>
+docufy batch ./resimler --from jpg --to png --dry-run
+docufy batch ./resimler --from jpg --to png --report json --report-file ./reports/batch.json</code></pre>
 
-  <h2>Watch modu</h2>
+  <h2>4) Watch modu</h2>
+  <p>Yeni gelen dosyaları otomatik işlemek için watch kullanılır.</p>
   <pre><code>docufy watch ./incoming --from webp --to jpg</code></pre>
 
-  <h2>İnteraktif mod</h2>
+  <h2>5) Pipeline ile çok adımlı akış</h2>
+  <pre><code>docufy pipeline run ./pipeline.json
+docufy pipeline run ./pipeline.json --report json --report-file ./reports/pipeline.json</code></pre>
+
+  <h2>6) Video/Ses araçlarını dene</h2>
+  <pre><code>docufy video extract-audio tanitim.mp4
+docufy video trim tanitim.mp4 --start 00:00:05 --duration 8
+docufy audio normalize podcast.mp3 --target-lufs -16</code></pre>
+
+  <h2>7) İnteraktif mod (TUI)</h2>
   <pre><code>docufy</code></pre>
+  <p>
+    TUI içinde dönüşüm, batch/watch, video araçları ve bilgi akışları menü tabanlı olarak ayrılmıştır. İlk
+    kullanımda CLI komutlarını öğrenmek için hızlı bir yol sağlar.
+  </p>
+
+  <h2>Sonraki adım</h2>
+  <p>
+    Günlük iş akışına göre şu rehberlerden devam et:
+    <a href={withBase("/docs/rehberler/tek-dosya-donusturme/")}> Tek Dosya</a>,
+    <a href={withBase("/docs/rehberler/batch-ve-watch/")}> Batch &amp; Watch</a>,
+    <a href={withBase("/docs/rehberler/pipeline/")}> Pipeline</a>,
+    <a href={withBase("/docs/rehberler/video-ve-ses/")}> Video &amp; Ses</a>.
+  </p>
 </DocsLayout>

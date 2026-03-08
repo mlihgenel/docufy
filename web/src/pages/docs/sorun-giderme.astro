@@ -3,20 +3,68 @@ import DocsLayout from "../../layouts/DocsLayout.astro";
 ---
 
 <DocsLayout title="Sorun Giderme" description="Sık görülen kurulum ve kullanım hataları">
-  <h2>`command not found: docufy`</h2>
-  <p>Go bin dizini PATH içinde değil. PATH ayarlarını kurulum sayfasına göre güncelle.</p>
+  <h2>Hızlı teşhis komutları</h2>
+  <pre><code>docufy --version
+docufy --help
+which docufy
+ffmpeg -version
+docufy formats --output-format json</code></pre>
 
-  <h2>FFmpeg bulunamadı</h2>
-  <p>FFmpeg kur ve terminalden `ffmpeg -version` komutunun çalıştığını doğrula.</p>
+  <h2>Yaygın sorunlar ve çözümler</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Belirti</th>
+        <th>Muhtemel neden</th>
+        <th>Çözüm</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>command not found: docufy</code></td>
+        <td>Go bin dizini PATH içinde değil</td>
+        <td>Kurulum sayfasındaki PATH adımlarını uygula, yeni terminal aç</td>
+      </tr>
+      <tr>
+        <td><code>ffmpeg not found</code></td>
+        <td>FFmpeg kurulu değil veya PATH'e ekli değil</td>
+        <td><code>ffmpeg -version</code> çıktısı alana kadar kurulumu doğrula</td>
+      </tr>
+      <tr>
+        <td>Eski sürüm çalışıyor</td>
+        <td>PATH'te farklı binary önce geliyor</td>
+        <td><code>which docufy</code> / <code>where docufy</code> ile aktif yolu kontrol et</td>
+      </tr>
+      <tr>
+        <td>Dönüşüm desteklenmiyor</td>
+        <td>Format kombinasyonu geçersiz</td>
+        <td><code>docufy formats --from ...</code> ile destek matrisini doğrula</td>
+      </tr>
+      <tr>
+        <td>Batch/pipeline yarıda kaldı</td>
+        <td>İşlem kesildi veya dosya hatası oluştu</td>
+        <td>JSON rapordan <code>--resume-from-report</code> ile devam et</td>
+      </tr>
+    </tbody>
+  </table>
 
-  <h2>Eski help/versiyon görünüyor</h2>
-  <p>Farklı bir binary PATH'te önce geliyor olabilir. `which docufy` ile aktif binary yolunu kontrol et.</p>
+  <h2>FFmpeg kaynaklı medya sorunları</h2>
+  <ul>
+    <li>Codec uyumsuzluklarında `--to mp4 --reencode` gibi açık format hedefi ver.</li>
+    <li>Video trim/merge için önce `--dry-run` ile planı doğrula.</li>
+    <li>
+      Çok uzun işlemlerde çıktıyı rapora yaz:
+      <code>--report json --report-file ./reports/job.json</code>.
+    </li>
+  </ul>
 
-  <h2>Dönüşüm desteklenmiyor hatası</h2>
-  <p>Kaynak ve hedef format kombinasyonunu `docufy formats --from <format>` ile doğrula.</p>
+  <h2>Raporla devam (resume) örneği</h2>
+  <pre><code>docufy batch ./resimler --from jpg --to png --report json --report-file ./reports/batch.json
+docufy batch ./resimler --from jpg --to png --resume-from-report ./reports/batch.json</code></pre>
 
-  <h2>JSON raporla devam etme</h2>
+  <h2>Hala çözülmediyse</h2>
   <p>
-    Batch veya pipeline job yarıda kalırsa `--resume-from-report` ile başarılı adımları atlayarak devam et.
+    Komut çıktısını (hata mesajı + komut parametreleri + işletim sistemi bilgisi) paylaşarak issue açman, sorunu
+    daha hızlı izole etmeyi sağlar.
   </p>
 </DocsLayout>

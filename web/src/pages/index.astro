@@ -7,58 +7,131 @@ import { withBase } from "../lib/paths";
   title="Docufy | Yerel Dosya Dönüştürme"
   description="Docufy ile belge, görsel, ses ve video dönüşümlerini tamamen yerel ortamda yapın."
 >
-  <section class="hero">
-    <div class="hero__text">
+  <section class="hero hero--landing">
+    <div class="hero__panel">
       <span class="hero__eyebrow">Go tabanlı CLI + TUI</span>
-      <h1>Dosya dönüşümü için sade komutlar, yerel ve güvenli çalışma modeli.</h1>
+      <h1>Yerel ortamda production-ready dosya dönüşüm ve medya iş akışları.</h1>
       <p>
-        Docufy; `convert`, `batch`, `watch` ve `pipeline` komutlarıyla belge, görsel, ses ve video işlerini
-        tek bir araçla yönetir.
+        Docufy; belge, görsel, ses ve video işlemlerini tek bir komut ailesinde toplar. `convert`, `batch`,
+        `watch`, `pipeline`, `video`, `audio` ve `info` komutlarıyla tek dosyadan büyük toplu işlere kadar
+        aynı modelle ilerlersin.
       </p>
       <div class="hero__actions">
         <a class="btn btn--primary" href={withBase("/docs/kurulum/")}>Kuruluma Başla</a>
         <a class="btn btn--secondary" href={withBase("/docs/hizli-baslangic/")}>Hızlı Başlangıç</a>
       </div>
-    </div>
-    <div class="hero__visual">
-      <img src={withBase("/assets/mainmenu.png")} alt="Docufy ana menü görünümü" loading="eager" />
-    </div>
-  </section>
-
-  <section class="section">
-    <h2>Neden Docufy?</h2>
-    <div class="feature-grid">
-      <article class="feature-card">
-        <h3>Local-first çalışma</h3>
-        <p>Dosyalar uzak servislere gitmeden dönüşür. Gizlilik ve kontrol tamamen sende kalır.</p>
-      </article>
-      <article class="feature-card">
-        <h3>CLI + TUI birlikte</h3>
-        <p>Script otomasyonu için CLI, menü tabanlı hızlı kullanım için TUI aynı binary içinde.</p>
-      </article>
-      <article class="feature-card">
-        <h3>Tek araç, çok mod</h3>
-        <p>Tek dosya, toplu dönüşüm, klasör izleme ve pipeline akışları aynı komut ailesiyle yönetilir.</p>
-      </article>
-      <article class="feature-card">
-        <h3>Geniş format kapsamı</h3>
-        <p>Doküman, görsel, ses ve video dönüşümleri aynı çalışma modelinde ilerler.</p>
-      </article>
+      <ul class="hero__facts">
+        <li>Local-first: dosyalar cihazdan çıkmaz</li>
+        <li>CLI + TUI: script ve interaktif kullanım aynı binary içinde</li>
+        <li>Batch/Watch/Pipeline: operasyonel akışlara hazır</li>
+      </ul>
     </div>
   </section>
 
-  <section class="section">
+  <section class="section section--narrow">
+    <h2>Docufy ile neler yapabilirsin?</h2>
+    <p class="section__lead">
+      Özellik seti sadece “format çevirme” ile sınırlı değil; medya araçları, batch operasyonları ve devam
+      ettirilebilir pipeline raporlarıyla birlikte gelir.
+    </p>
+    <div class="capability-list">
+      <article class="capability-item">
+        <h3>Belge ve görsel dönüşümleri</h3>
+        <p>Markdown/PDF, JPEG/PNG/WebP, HEIC/HEIF ve SVG kaynaklarını hedef formata dönüştürebilirsin.</p>
+        <pre class="command-box"><code>docufy convert belge.md --to pdf
+docufy convert IMG_1234.HEIC --to png
+docufy convert logo.svg --to pdf</code></pre>
+      </article>
+      <article class="capability-item">
+        <h3>Video ve ses araçları</h3>
+        <p>Video trim, merge, snapshot, extract-audio ve audio normalize senaryoları hazır komutlarla gelir.</p>
+        <pre class="command-box"><code>docufy video trim input.mp4 --start 00:00:05 --duration 10
+docufy video extract-audio klip.mp4
+docufy audio normalize podcast.mp3 --target-lufs -16</code></pre>
+      </article>
+      <article class="capability-item">
+        <h3>Toplu ve otomatik akışlar</h3>
+        <p>Batch, watch ve pipeline modlarında çakışma yönetimi, retry, JSON rapor ve resume desteği vardır.</p>
+        <pre class="command-box"><code>docufy batch ./resimler --from jpg --to png --report json
+docufy watch ./incoming --from webp --to jpg
+docufy pipeline run ./pipeline.json --resume-from-report ./reports/pipeline.json</code></pre>
+      </article>
+    </div>
+  </section>
+
+  <section class="section section--narrow">
+    <h2>Dönüşüm kapsamı</h2>
+    <p class="section__lead">Aşağıdaki özet tablo en çok kullanılan dönüşüm ailelerini gösterir.</p>
+    <div class="format-matrix">
+      <table>
+        <thead>
+          <tr>
+            <th>Kaynak</th>
+            <th>Hedef</th>
+            <th>Örnek Komut</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Belge (`md`, `docx`, `pdf`)</td>
+            <td>`pdf`, `txt`, `html`</td>
+            <td><code>docufy convert notlar.docx --to txt</code></td>
+          </tr>
+          <tr>
+            <td>Görsel (`jpg`, `png`, `webp`, `heic`, `svg`)</td>
+            <td>`png`, `jpg`, `webp`, `pdf`</td>
+            <td><code>docufy convert fotograf.png --to webp</code></td>
+          </tr>
+          <tr>
+            <td>Ses (`mp3`, `wav`, `m4a`)</td>
+            <td>`wav`, `mp3`, normalize çıktı</td>
+            <td><code>docufy convert ses.mp3 --to wav</code></td>
+          </tr>
+          <tr>
+            <td>Video (`mp4`, `mov`, `webm`)</td>
+            <td>`mp4`, `gif`, extract-audio</td>
+            <td><code>docufy convert klip.mp4 --to gif --quality 80</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="section section--narrow">
+    <h2>İş akışı modları</h2>
+    <div class="workflow-grid">
+      <article class="workflow-item">
+        <h3>Tek dosya</h3>
+        <p>`convert` ve `video/audio` komutlarıyla hedefe odaklı hızlı işlemler.</p>
+      </article>
+      <article class="workflow-item">
+        <h3>Toplu operasyon</h3>
+        <p>`batch` ile klasör/recursive/glob işleme, on-conflict ve retry kontrolü.</p>
+      </article>
+      <article class="workflow-item">
+        <h3>Sürekli izleme</h3>
+        <p>`watch` ile klasöre düşen yeni dosyaları otomatik dönüştürme.</p>
+      </article>
+      <article class="workflow-item">
+        <h3>Pipeline ve rapor</h3>
+        <p>JSON spec üzerinden çok adımlı akış, raporlama ve `resume` desteği.</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="section section--narrow">
     <h2>Kurulum</h2>
     <pre class="command-box"><code>go install github.com/mlihgenel/docufy/v2/cmd/docufy@latest</code></pre>
     <p>
-      Ayrıntılı PATH ayarı ve platform adımları için
-      <a href={withBase("/docs/kurulum/")}> Kurulum dokümanına git</a>.
+      PATH, platform adımları ve doğrulama için
+      <a href={withBase("/docs/kurulum/")}>Kurulum dokümanına git</a>. Komut örnekleri için
+      <a href={withBase("/docs/hizli-baslangic/")}>Hızlı Başlangıç</a> sayfasını kullan.
     </p>
   </section>
 
-  <section class="section">
+  <section class="section section--narrow">
     <h2>Kısa Demo</h2>
-    <div class="hero__visual">
+    <div class="demo-frame">
       <img src={withBase("/assets/docufy.gif")} alt="Docufy kısa kullanım demosu" loading="lazy" />
     </div>
   </section>

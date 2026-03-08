@@ -14,15 +14,72 @@ const currentPath = normalizePathname(Astro.url.pathname);
 
 <MainLayout title={`${title} | Docufy Docs`} description={description}>
   <main class="docs-shell">
-    <aside>
+    <aside class="docs-shell__nav">
       <DocsSidebar currentPath={currentPath} />
     </aside>
-    <article class="docs-article">
+    <article class="docs-article" data-docs-article>
       <header class="docs-article__header">
         <h1>{title}</h1>
         <p>{description}</p>
       </header>
       <slot />
     </article>
+    <aside class="docs-shell__toc" aria-label="Bu sayfada">
+      <nav class="docs-toc">
+        <h2>Bu sayfada</h2>
+        <ul data-docs-toc-list>
+          <li><span>Başlıklar yükleniyor...</span></li>
+        </ul>
+      </nav>
+    </aside>
   </main>
 </MainLayout>
+
+<script is:inline>
+  (() => {
+    const article = document.querySelector("[data-docs-article]");
+    const tocList = document.querySelector("[data-docs-toc-list]");
+    if (!article || !tocList) return;
+
+    const normalizeSlug = (value) =>
+      value
+        .toLocaleLowerCase("tr-TR")
+        .replaceAll("ı", "i")
+        .replaceAll("ğ", "g")
+        .replaceAll("ş", "s")
+        .replaceAll("ü", "u")
+        .replaceAll("ö", "o")
+        .replaceAll("ç", "c")
+        .normalize("NFKD")
+        .replace(/[^\w\s-]/g, "")
+        .trim()
+        .replace(/\s+/g, "-");
+
+    const headings = [...article.querySelectorAll("h2, h3")];
+    if (!headings.length) {
+      tocList.innerHTML = "<li><span>Bu sayfada alt başlık yok.</span></li>";
+      return;
+    }
+
+    const used = new Set();
+    for (const heading of headings) {
+      if (!heading.id) {
+        let id = normalizeSlug(heading.textContent || "");
+        if (!id) id = "section";
+        let i = 2;
+        while (used.has(id) || document.getElementById(id)) {
+          id = `${id}-${i++}`;
+        }
+        heading.id = id;
+      }
+      used.add(heading.id);
+    }
+
+    tocList.innerHTML = headings
+      .map((heading) => {
+        const level = heading.tagName === "H3" ? "docs-toc__sub" : "";
+        return `<li class="${level}"><a href="#${heading.id}">${heading.textContent || ""}</a></li>`;
+      })
+      .join("");
+  })();
+</script>

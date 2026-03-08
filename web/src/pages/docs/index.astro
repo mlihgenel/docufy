@@ -4,11 +4,36 @@ import { withBase } from "../../lib/paths";
 ---
 
 <DocsLayout title="Docufy Dokümantasyon" description="Kurulum, rehberler ve sorun giderme içerikleri">
-  <p>Bu dokümantasyon, README içeriğini daha hızlı taranabilir ve adım adım uygulanabilir bir yapıda sunar.</p>
+  <p>
+    Bu dokümantasyon README'deki kapsamı adım adım uygulanabilir hale getirir. Kurulumdan operasyona kadar tüm
+    akışı hızlıca taramak için aşağıdaki yol haritasını kullan.
+  </p>
+
+  <h2>Başlangıç rotası</h2>
   <ul>
     <li><a href={withBase("/docs/kurulum/")}>Kurulum</a></li>
     <li><a href={withBase("/docs/hizli-baslangic/")}>Hızlı Başlangıç</a></li>
     <li><a href={withBase("/docs/rehberler/tek-dosya-donusturme/")}>Rehberler</a></li>
     <li><a href={withBase("/docs/sorun-giderme/")}>Sorun Giderme</a></li>
+  </ul>
+
+  <h2>Rehber paketi</h2>
+  <ul>
+    <li>
+      <a href={withBase("/docs/rehberler/tek-dosya-donusturme/")}>Tek Dosya Dönüştürme</a>:
+      belge/görsel/ses/video dönüşüm örnekleri
+    </li>
+    <li>
+      <a href={withBase("/docs/rehberler/batch-ve-watch/")}>Batch ve Watch</a>:
+      toplu ve otomatik operasyon akışları
+    </li>
+    <li>
+      <a href={withBase("/docs/rehberler/pipeline/")}>Pipeline</a>:
+      JSON tabanlı çok adımlı otomasyon
+    </li>
+    <li>
+      <a href={withBase("/docs/rehberler/video-ve-ses/")}>Video ve Ses Araçları</a>:
+      trim, merge, snapshot, extract-audio, normalize
+    </li>
   </ul>
 </DocsLayout>

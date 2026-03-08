@@ -3,22 +3,46 @@ import DocsLayout from "../../../layouts/DocsLayout.astro";
 ---
 
 <DocsLayout title="Batch ve Watch" description="Toplu dönüşüm ve klasör izleme akışları">
-  <h2>Batch</h2>
+  <h2>Batch komutu ne zaman kullanılır?</h2>
+  <p>
+    Aynı dönüşümü çok sayıda dosyaya uygulamak, klasör yapısını korumak, rapor almak ve hatadan sonra devam
+    etmek istediğinde `batch` kullanılır.
+  </p>
+
+  <h2>Batch temel örnekleri</h2>
   <pre><code>docufy batch ./docs --from md --to pdf
 docufy batch ./videolar --from mp4 --to gif --recursive
 docufy batch ./resimler --from jpg --to png --dry-run</code></pre>
 
-  <h2>Çakışma ve retry</h2>
+  <h3>Glob ve çıktı klasörü</h3>
+  <pre><code>docufy batch "*.png" --from png --to jpg --quality 85
+docufy batch ./assets --from png --to jpg --output ./export --preserve-tree</code></pre>
+
+  <h2>Çakışma, retry ve raporlama</h2>
   <pre><code>docufy batch ./resimler --from jpg --to png \
   --on-conflict versioned \
   --retry 2 --retry-delay 1s \
   --report json --report-file ./reports/batch.json</code></pre>
 
-  <h2>Resume</h2>
+  <h2>Yarıda kalan batch'e devam (resume)</h2>
   <pre><code>docufy batch ./resimler --from jpg --to png \
   --resume-from-report ./reports/batch.json</code></pre>
 
-  <h2>Watch</h2>
+  <h2>Watch komutu ne zaman kullanılır?</h2>
+  <p>
+    Sürekli gelen dosyaların otomatik işlenmesini istediğinde kullanılır. İçeri düşen dosya eşleşirse
+    dönüşüm tetiklenir.
+  </p>
+
+  <h2>Watch örnekleri</h2>
   <pre><code>docufy watch ./incoming --from webp --to jpg
-docufy watch ./videolar --from mp4 --to gif --recursive --quality 80</code></pre>
+docufy watch ./videolar --from mp4 --to gif --recursive --quality 80
+docufy watch ./incoming --from mov --to mp4 --profile archive-lossless</code></pre>
+
+  <h2>Pratik operasyon önerileri</h2>
+  <ul>
+    <li>Önce batch ile `--dry-run` al, sonra gerçek çalıştır.</li>
+    <li>Uzun işlerde her zaman JSON rapor üret.</li>
+    <li>Watch klasörünü yalnızca giriş dosyaları için kullan; çıktı klasörü ayrı olsun.</li>
+  </ul>
 </DocsLayout>

@@ -3,24 +3,74 @@ import DocsLayout from "../../layouts/DocsLayout.astro";
 ---
 
 <DocsLayout title="Nasıl Çalışır" description="Docufy'nin iş akış modeli ve komut aileleri">
-  <h2>1) Girdi dosyası seçilir</h2>
-  <p>Tek dosya, klasör veya pipeline spec tanımı ile kaynak belirlenir.</p>
-
-  <h2>2) Dönüşüm stratejisi seçilir</h2>
+  <h2>İş akışı modeli</h2>
   <p>
-    `convert`, `batch`, `watch`, `pipeline`, `video` ve `audio` komutları aynı seçenek modelini paylaşır:
-    kalite, metadata, çakışma politikası, retry.
+    Docufy, tüm komutlarda benzer bir çalışma modeli kullanır: <strong>girdi seçimi</strong>,
+    <strong> dönüşüm stratejisi</strong>, <strong>yerel işlem</strong> ve <strong>çıktı/rapor</strong>.
   </p>
 
-  <h2>3) Yerel işlenir</h2>
+  <h2>1) Girdi belirleme</h2>
+  <ul>
+    <li>Tek dosya: `convert`, `video`, `audio`, `info`</li>
+    <li>Klasör / glob: `batch`</li>
+    <li>Sürekli klasör izleme: `watch`</li>
+    <li>JSON tabanlı çok adımlı akış: `pipeline run`</li>
+  </ul>
+
+  <h2>2) Strateji ve parametreler</h2>
   <p>
-    İşlem yerel makinede çalışır. FFmpeg / LibreOffice / Pandoc gerektiren dönüşümlerde ilgili aracın yerel
-    kurulumu kullanılır.
+    Komutların çoğu ortak kontrol parametreleri paylaşır: kalite, metadata modu, çakışma politikası,
+    tekrar deneme, rapor üretimi ve profil kullanımı.
+  </p>
+  <pre><code>docufy convert input.jpg --to webp --quality 85 --strip-metadata
+docufy batch ./media --from jpg --to png --on-conflict versioned --retry 2</code></pre>
+
+  <h2>3) Yerel işleme katmanı</h2>
+  <p>
+    Tüm dönüşümler yerel makinede çalışır. FFmpeg / LibreOffice / Pandoc gerektiren dönüşümlerde ilgili
+    aracın sistemdeki kurulumu kullanılır; dosyalar dış servislere gönderilmez.
   </p>
 
-  <h2>4) Çıktı ve rapor</h2>
+  <h2>4) Çıktı, rapor ve devam</h2>
   <p>
-    Batch ve pipeline senaryolarında rapor dosyası oluşturulabilir. JSON raporlarla kaldığı yerden devam
-    (`resume`) akışı desteklenir.
+    Özellikle batch ve pipeline modlarında JSON raporla gözlemlenebilirlik sağlanır. Yarıda kalan
+    operasyonlarda `--resume-from-report` ile başarılı adımlar atlanarak devam edilir.
   </p>
+  <pre><code>docufy batch ./assets --from png --to jpg --report json --report-file ./reports/batch.json
+docufy batch ./assets --from png --to jpg --resume-from-report ./reports/batch.json</code></pre>
+
+  <h2>Konfigürasyon önceliği</h2>
+  <p>Genel öncelik sırası: <strong>CLI flag</strong> &gt; <strong>ENV</strong> &gt; <strong>proje config</strong> &gt; <strong>default</strong>.</p>
+
+  <h2>Komut aileleri özeti</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Komut</th>
+        <th>Kullanım amacı</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>convert</code></td>
+        <td>Tek dosya dönüşümü ve temel medya format işlemleri</td>
+      </tr>
+      <tr>
+        <td><code>batch</code></td>
+        <td>Toplu klasör/glob işleme, raporlama, resume</td>
+      </tr>
+      <tr>
+        <td><code>watch</code></td>
+        <td>Klasör izleyip yeni dosyaları otomatik dönüştürme</td>
+      </tr>
+      <tr>
+        <td><code>pipeline run</code></td>
+        <td>Çok adımlı JSON akışlarıyla otomasyon</td>
+      </tr>
+      <tr>
+        <td><code>video</code>, <code>audio</code>, <code>info</code></td>
+        <td>Medya araçları ve metadata/teknik bilgi analizi</td>
+      </tr>
+    </tbody>
+  </table>
 </DocsLayout>

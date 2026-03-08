@@ -3,20 +3,40 @@ import DocsLayout from "../../../layouts/DocsLayout.astro";
 ---
 
 <DocsLayout title="Tek Dosya Dönüştürme" description="`convert` komutuyla hızlı dönüşüm senaryoları">
+  <h2>Komut yapısı</h2>
+  <pre><code>docufy convert &lt;girdi-dosyasi&gt; --to &lt;hedef-format&gt; [opsiyonlar]</code></pre>
+
   <h2>Belge dönüştürme</h2>
+  <p>Belge tarafında en yaygın akışlar Markdown/Docx/PDF eksenindedir.</p>
   <pre><code>docufy convert belge.md --to pdf
-docufy convert notlar.docx --to txt</code></pre>
+docufy convert notlar.docx --to txt
+docufy convert sozlesme.pdf --to txt</code></pre>
 
   <h2>Görsel dönüştürme</h2>
+  <p>HEIC/HEIF, SVG ve klasik raster formatlarını aynı akışta dönüştürebilirsin.</p>
   <pre><code>docufy convert IMG_1234.HEIC --to png
 docufy convert fotograf.png --to webp
-docufy convert fotograf.jpg --to jpg --target-size 500kb</code></pre>
+docufy convert fotograf.jpg --to jpg --target-size 500kb
+docufy convert logo.svg --to pdf</code></pre>
+
+  <h3>Boyutlandırma ve preset</h3>
+  <pre><code>docufy convert fotograf.webp --to png --width 12 --height 18 --unit cm --dpi 300
+docufy convert klip.mp4 --to mp4 --preset story --resize-mode pad</code></pre>
 
   <h2>Video dönüştürme</h2>
   <pre><code>docufy convert klip.mp4 --to gif --quality 80
 docufy convert klip.mp4 --to mp4 --preset story --resize-mode pad</code></pre>
 
-  <h2>Profil kullanımı</h2>
+  <h2>Ses dönüştürme</h2>
+  <pre><code>docufy convert ses.mp3 --to wav
+docufy convert podcast.m4a --to mp3</code></pre>
+
+  <h2>Profil ve metadata kullanımı</h2>
   <pre><code>docufy convert klip.mp4 --to mp4 --profile social-story
-docufy convert kamera.mov --to mp4 --strip-metadata</code></pre>
+docufy convert kamera.mov --to mp4 --strip-metadata
+docufy convert kamera.mov --to mp4 --preserve-metadata</code></pre>
+
+  <h2>Doğrulama</h2>
+  <pre><code>docufy info output.mp4
+docufy info output.jpg --output-format json</code></pre>
 </DocsLayout>
