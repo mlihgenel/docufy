@@ -1,0 +1,24 @@
+---
+import DocsLayout from "../../../layouts/DocsLayout.astro";
+---
+
+<DocsLayout title="Video ve Ses Araçları" description="`video` ve `audio` komutlarıyla temel medya işlemleri">
+  <h2>Videodan ses çıkarma</h2>
+  <pre><code>docufy video extract-audio klip.mp4
+docufy video extract-audio orijinal.mov --copy</code></pre>
+
+  <h2>Snapshot</h2>
+  <pre><code>docufy video snapshot klip.mp4 --at 30 --to jpg
+docufy video snapshot klip.mp4 --at %50 --to png</code></pre>
+
+  <h2>Video merge</h2>
+  <pre><code>docufy video merge part1.mp4 part2.mp4 --name full_video
+docufy video merge iphone.mov web.webm --to mp4 --reencode --quality 80</code></pre>
+
+  <h2>Video trim</h2>
+  <pre><code>docufy video trim input.mp4 --start 00:00:05 --duration 10
+docufy video trim input.mp4 --mode remove --ranges "00:00:05-00:00:08,00:00:20-00:00:25" --dry-run</code></pre>
+
+  <h2>Audio normalize</h2>
+  <pre><code>docufy audio normalize podcast.mp3 --target-lufs -16</code></pre>
+</DocsLayout>

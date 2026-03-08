@@ -1,0 +1,65 @@
+---
+import MainLayout from "../layouts/MainLayout.astro";
+import { withBase } from "../lib/paths";
+---
+
+<MainLayout
+  title="Docufy | Yerel Dosya Dönüştürme"
+  description="Docufy ile belge, görsel, ses ve video dönüşümlerini tamamen yerel ortamda yapın."
+>
+  <section class="hero">
+    <div class="hero__text">
+      <span class="hero__eyebrow">Go tabanlı CLI + TUI</span>
+      <h1>Dosya dönüşümü için sade komutlar, yerel ve güvenli çalışma modeli.</h1>
+      <p>
+        Docufy; `convert`, `batch`, `watch` ve `pipeline` komutlarıyla belge, görsel, ses ve video işlerini
+        tek bir araçla yönetir.
+      </p>
+      <div class="hero__actions">
+        <a class="btn btn--primary" href={withBase("/docs/kurulum/")}>Kuruluma Başla</a>
+        <a class="btn btn--secondary" href={withBase("/docs/hizli-baslangic/")}>Hızlı Başlangıç</a>
+      </div>
+    </div>
+    <div class="hero__visual">
+      <img src={withBase("/assets/mainmenu.png")} alt="Docufy ana menü görünümü" loading="eager" />
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>Neden Docufy?</h2>
+    <div class="feature-grid">
+      <article class="feature-card">
+        <h3>Local-first çalışma</h3>
+        <p>Dosyalar uzak servislere gitmeden dönüşür. Gizlilik ve kontrol tamamen sende kalır.</p>
+      </article>
+      <article class="feature-card">
+        <h3>CLI + TUI birlikte</h3>
+        <p>Script otomasyonu için CLI, menü tabanlı hızlı kullanım için TUI aynı binary içinde.</p>
+      </article>
+      <article class="feature-card">
+        <h3>Tek araç, çok mod</h3>
+        <p>Tek dosya, toplu dönüşüm, klasör izleme ve pipeline akışları aynı komut ailesiyle yönetilir.</p>
+      </article>
+      <article class="feature-card">
+        <h3>Geniş format kapsamı</h3>
+        <p>Doküman, görsel, ses ve video dönüşümleri aynı çalışma modelinde ilerler.</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>Kurulum</h2>
+    <pre class="command-box"><code>go install github.com/mlihgenel/docufy/v2/cmd/docufy@latest</code></pre>
+    <p>
+      Ayrıntılı PATH ayarı ve platform adımları için
+      <a href={withBase("/docs/kurulum/")}> Kurulum dokümanına git</a>.
+    </p>
+  </section>
+
+  <section class="section">
+    <h2>Kısa Demo</h2>
+    <div class="hero__visual">
+      <img src={withBase("/assets/docufy.gif")} alt="Docufy kısa kullanım demosu" loading="lazy" />
+    </div>
+  </section>
+</MainLayout>

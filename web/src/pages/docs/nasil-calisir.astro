@@ -1,0 +1,26 @@
+---
+import DocsLayout from "../../layouts/DocsLayout.astro";
+---
+
+<DocsLayout title="Nasıl Çalışır" description="Docufy'nin iş akış modeli ve komut aileleri">
+  <h2>1) Girdi dosyası seçilir</h2>
+  <p>Tek dosya, klasör veya pipeline spec tanımı ile kaynak belirlenir.</p>
+
+  <h2>2) Dönüşüm stratejisi seçilir</h2>
+  <p>
+    `convert`, `batch`, `watch`, `pipeline`, `video` ve `audio` komutları aynı seçenek modelini paylaşır:
+    kalite, metadata, çakışma politikası, retry.
+  </p>
+
+  <h2>3) Yerel işlenir</h2>
+  <p>
+    İşlem yerel makinede çalışır. FFmpeg / LibreOffice / Pandoc gerektiren dönüşümlerde ilgili aracın yerel
+    kurulumu kullanılır.
+  </p>
+
+  <h2>4) Çıktı ve rapor</h2>
+  <p>
+    Batch ve pipeline senaryolarında rapor dosyası oluşturulabilir. JSON raporlarla kaldığı yerden devam
+    (`resume`) akışı desteklenir.
+  </p>
+</DocsLayout>

@@ -1,0 +1,24 @@
+---
+import DocsLayout from "../../../layouts/DocsLayout.astro";
+---
+
+<DocsLayout title="Batch ve Watch" description="Toplu dönüşüm ve klasör izleme akışları">
+  <h2>Batch</h2>
+  <pre><code>docufy batch ./docs --from md --to pdf
+docufy batch ./videolar --from mp4 --to gif --recursive
+docufy batch ./resimler --from jpg --to png --dry-run</code></pre>
+
+  <h2>Çakışma ve retry</h2>
+  <pre><code>docufy batch ./resimler --from jpg --to png \
+  --on-conflict versioned \
+  --retry 2 --retry-delay 1s \
+  --report json --report-file ./reports/batch.json</code></pre>
+
+  <h2>Resume</h2>
+  <pre><code>docufy batch ./resimler --from jpg --to png \
+  --resume-from-report ./reports/batch.json</code></pre>
+
+  <h2>Watch</h2>
+  <pre><code>docufy watch ./incoming --from webp --to jpg
+docufy watch ./videolar --from mp4 --to gif --recursive --quality 80</code></pre>
+</DocsLayout>

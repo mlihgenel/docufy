@@ -1,0 +1,340 @@
+---
+import { normalizePathname, withBase } from "../lib/paths";
+import { docsNav } from "../lib/docs-nav";
+
+const currentPath = normalizePathname(Astro.url.pathname);
+
+const navItems = [
+  { label: "Ana Sayfa", href: "/" },
+  { label: "Kurulum", href: "/docs/kurulum/", matchPrefix: "/docs/kurulum/" },
+  { label: "Hızlı Başlangıç", href: "/docs/hizli-baslangic/", matchPrefix: "/docs/hizli-baslangic/" },
+  { label: "Rehberler", href: "/docs/rehberler/tek-dosya-donusturme/", matchPrefix: "/docs/rehberler/" },
+  { label: "Sorun Giderme", href: "/docs/sorun-giderme/", matchPrefix: "/docs/sorun-giderme/" }
+];
+
+const searchKeywordsByHref: Record<string, string[]> = {
+  "/": ["home", "anasayfa", "docufy", "cli", "tui", "dosya donusturme", "file converter"],
+  "/docs/": ["docs", "dokumantasyon", "yardim", "rehber", "kilavuz", "documentation"],
+  "/docs/kurulum/": ["kurulum", "install", "yukleme", "path", "ffmpeg", "windows", "macos", "linux"],
+  "/docs/hizli-baslangic/": ["hizli baslangic", "quickstart", "ilk 10 dakika", "ornek", "temel kullanim"],
+  "/docs/nasil-calisir/": ["nasil calisir", "is akis modeli", "workflow", "komut aileleri", "mimari"],
+  "/docs/rehberler/tek-dosya-donusturme/": [
+    "tek dosya",
+    "convert",
+    "jpg",
+    "png",
+    "webp",
+    "gif",
+    "pdf",
+    "format donusturme"
+  ],
+  "/docs/rehberler/batch-ve-watch/": [
+    "batch",
+    "watch",
+    "toplu donusturme",
+    "klasor izleme",
+    "otomatik donusturme",
+    "watch mode"
+  ],
+  "/docs/rehberler/pipeline/": ["pipeline", "json", "akis", "otomasyon", "cok adimli", "workflow dosyasi"],
+  "/docs/rehberler/video-ve-ses/": [
+    "video",
+    "ses",
+    "audio",
+    "trim",
+    "merge",
+    "extract audio",
+    "snapshot",
+    "normalize",
+    "ffmpeg"
+  ],
+  "/docs/sorun-giderme/": ["sorun giderme", "troubleshooting", "hata", "cozum", "error", "problem"]
+};
+
+const searchPages = [
+  { title: "Ana Sayfa", href: "/", keywords: searchKeywordsByHref["/"] },
+  { title: "Dokümantasyon", href: "/docs/", keywords: searchKeywordsByHref["/docs/"] },
+  ...docsNav.flatMap((section) =>
+    section.items.map((item) => ({
+      title: item.title,
+      href: item.href,
+      keywords: [section.title, ...(searchKeywordsByHref[item.href] || [])]
+    }))
+  )
+].map((item) => ({
+  title: item.title,
+  href: withBase(item.href),
+  keywords: item.keywords
+}));
+const docsFallbackUrl = withBase("/docs/");
+---
+
+<header class="site-header">
+  <div class="site-header__container">
+    <div class="site-header__top">
+      <a class="site-brand" href={withBase("/")} aria-label="Docufy ana sayfa">
+        <img
+          class="site-brand__logo site-brand__logo--dark"
+          src={withBase("/assets/docufy-white-logo.svg")}
+          alt="Docufy"
+          loading="eager"
+        />
+        <img
+          class="site-brand__logo site-brand__logo--light"
+          src={withBase("/assets/docufy-black-logo.svg")}
+          alt="Docufy"
+          loading="eager"
+        />
+      </a>
+      <div class="site-header__tools">
+        <button class="theme-toggle" type="button" data-theme-toggle aria-label="Tema değiştir">
+          <span class="sr-only">Tema</span>
+        </button>
+        <form class="site-search" data-site-search-form role="search">
+          <svg class="site-search__icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              fill="currentColor"
+              d="M10.5 3a7.5 7.5 0 0 1 5.96 12.05l4.24 4.25a1 1 0 0 1-1.41 1.41l-4.25-4.24A7.5 7.5 0 1 1 10.5 3zm0 2a5.5 5.5 0 1 0 0 11a5.5 5.5 0 0 0 0-11z"
+            />
+          </svg>
+          <input type="search" placeholder="Search" aria-label="Site içinde ara" data-site-search-input />
+        </form>
+        <a class="site-header__repo" href="https://github.com/mlihgenel/docufy" target="_blank" rel="noreferrer" data-repo-stats>
+          <svg class="site-header__repo-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              fill="currentColor"
+              d="M12 2C6.477 2 2 6.589 2 12.25c0 4.53 2.865 8.372 6.839 9.729c.5.095.683-.223.683-.495c0-.245-.009-.894-.014-1.754c-2.782.618-3.369-1.392-3.369-1.392c-.455-1.183-1.11-1.498-1.11-1.498c-.908-.637.069-.624.069-.624c1.004.073 1.531 1.057 1.531 1.057c.892 1.568 2.341 1.115 2.91.852c.091-.664.349-1.115.635-1.371c-2.221-.259-4.555-1.139-4.555-5.069c0-1.12.39-2.035 1.03-2.752c-.103-.26-.447-1.304.098-2.719c0 0 .84-.276 2.75 1.051A9.33 9.33 0 0 1 12 6.705a9.3 9.3 0 0 1 2.504.35c1.909-1.327 2.748-1.051 2.748-1.051c.547 1.415.203 2.459.1 2.719c.64.717 1.028 1.632 1.028 2.752c0 3.94-2.338 4.806-4.566 5.06c.359.317.679.943.679 1.9c0 1.372-.012 2.478-.012 2.814c0 .275.18.595.688.494C19.138 20.62 22 16.778 22 12.25C22 6.589 17.523 2 12 2z"
+            />
+          </svg>
+          <span class="site-header__repo-text">
+            <span class="site-header__repo-name">docufy</span>
+            <span class="site-header__repo-meta">
+              <span class="site-header__repo-meta-item">
+                <svg class="site-header__repo-meta-icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="1.8"
+                    d="m12 3.7 2.55 5.17 5.7.83-4.13 4.03.98 5.68L12 16.73 6.9 19.41l.98-5.68-4.13-4.03 5.7-.83Z"
+                  />
+                </svg>
+                <span data-repo-stars>--</span>
+              </span>
+              <span class="site-header__repo-meta-item">
+                <svg class="site-header__repo-meta-icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="1.8"
+                    d="M20 10.5 13.5 4H6a2 2 0 0 0-2 2v7.5L10.5 20a2.1 2.1 0 0 0 3 0l6.5-6.5a2.1 2.1 0 0 0 0-3ZM8.5 8.5h.01"
+                  />
+                </svg>
+                <span data-repo-version>v--</span>
+              </span>
+            </span>
+          </span>
+        </a>
+      </div>
+    </div>
+    <nav class="site-nav" aria-label="Ana menü">
+      {
+        navItems.map((item) => {
+          const isActive =
+            item.href === "/"
+              ? currentPath === "/"
+              : currentPath.startsWith(item.matchPrefix || item.href);
+          return (
+            <a class:list={["site-nav__link", isActive && "active"]} href={withBase(item.href)}>
+              {item.label}
+            </a>
+          );
+        })
+      }
+    </nav>
+  </div>
+</header>
+
+<script is:inline define:vars={{ searchPages, docsFallbackUrl }}>
+  (() => {
+    const root = document.documentElement;
+    const button = document.querySelector("[data-theme-toggle]");
+    const storageKey = "docufy-theme";
+    const moonIcon =
+      '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M21 14.06A9 9 0 1 1 9.94 3a7 7 0 1 0 11.06 11.06z"/></svg>';
+    const sunIcon =
+      '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 4a1 1 0 0 1 1 1v1.2a1 1 0 1 1-2 0V5a1 1 0 0 1 1-1zm0 12a4 4 0 1 0 0-8a4 4 0 0 0 0 8zm8-5a1 1 0 0 1 0 2h-1.2a1 1 0 1 1 0-2H20zM6.2 12a1 1 0 0 1-1 1H4a1 1 0 1 1 0-2h1.2a1 1 0 0 1 1 1zm9.85-5.85a1 1 0 0 1 1.4 0l.85.85a1 1 0 0 1-1.4 1.4l-.85-.85a1 1 0 0 1 0-1.4zm-10.35 10.35a1 1 0 0 1 1.4 0l.85.85a1 1 0 1 1-1.4 1.4l-.85-.85a1 1 0 0 1 0-1.4zM17.3 16.5a1 1 0 0 1 1.4 1.4l-.85.85a1 1 0 0 1-1.4-1.4l.85-.85zm-10.6-10.6a1 1 0 0 1 1.4 1.4l-.85.85a1 1 0 0 1-1.4-1.4l.85-.85z"/></svg>';
+
+    const getTheme = () => (root.getAttribute("data-theme") === "light" ? "light" : "dark");
+
+    const apply = (theme) => {
+      root.setAttribute("data-theme", theme);
+      if (!button) return;
+      button.innerHTML = `<span class="theme-toggle__icon">${theme === "dark" ? sunIcon : moonIcon}</span><span class="sr-only">Tema</span>`;
+      button.setAttribute("aria-pressed", theme === "light" ? "true" : "false");
+      button.setAttribute(
+        "aria-label",
+        theme === "dark" ? "Açık temaya geç" : "Koyu temaya geç"
+      );
+    };
+
+    apply(getTheme());
+
+    button?.addEventListener("click", () => {
+      const next = getTheme() === "dark" ? "light" : "dark";
+      apply(next);
+      try {
+        localStorage.setItem(storageKey, next);
+      } catch {
+        // no-op
+      }
+    });
+
+    const repoLink = document.querySelector("[data-repo-stats]");
+    const starsEl = repoLink?.querySelector("[data-repo-stars]");
+    const versionEl = repoLink?.querySelector("[data-repo-version]");
+    const searchForm = document.querySelector("[data-site-search-form]");
+    const searchInput = searchForm?.querySelector("[data-site-search-input]");
+    const searchIndex = searchPages;
+
+    const normalizeSearchValue = (value) =>
+      value
+        .toLocaleLowerCase("tr-TR")
+        .replaceAll("ı", "i")
+        .replaceAll("ğ", "g")
+        .replaceAll("ş", "s")
+        .replaceAll("ü", "u")
+        .replaceAll("ö", "o")
+        .replaceAll("ç", "c")
+        .trim();
+
+    const findBestMatch = (query) => {
+      const normalizedQuery = normalizeSearchValue(query);
+      if (!normalizedQuery) return null;
+      const queryTokens = normalizedQuery.split(/\s+/).filter(Boolean);
+
+      let bestMatch = null;
+      let bestScore = -1;
+
+      for (const page of searchIndex) {
+        const normalizedTitle = normalizeSearchValue(page.title);
+        const normalizedKeywords = (page.keywords || []).map(normalizeSearchValue);
+        const targetText = [normalizedTitle, ...normalizedKeywords].join(" ");
+        let score = 0;
+
+        if (normalizedTitle === normalizedQuery) score += 200;
+        if (normalizedTitle.startsWith(normalizedQuery)) score += 120;
+        if (normalizedTitle.includes(normalizedQuery)) score += 90;
+        if (targetText.includes(normalizedQuery)) score += 70;
+
+        for (const keyword of normalizedKeywords) {
+          if (keyword === normalizedQuery) score += 70;
+          if (keyword.startsWith(normalizedQuery)) score += 50;
+          if (keyword.includes(normalizedQuery)) score += 35;
+        }
+
+        const matchedTokenCount = queryTokens.filter((token) => targetText.includes(token)).length;
+        score += matchedTokenCount * 18;
+        if (queryTokens.length > 1 && matchedTokenCount === queryTokens.length) score += 60;
+
+        for (const token of queryTokens) {
+          if (targetText.includes(token)) score += 15;
+        }
+
+        if (score > bestScore) {
+          bestScore = score;
+          bestMatch = page;
+        }
+      }
+
+      return bestScore > 0 ? bestMatch : null;
+    };
+
+    searchForm?.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const query = searchInput?.value || "";
+      const match = findBestMatch(query);
+      window.location.href = match?.href || docsFallbackUrl;
+    });
+
+    const formatStars = (stars) => new Intl.NumberFormat("tr-TR").format(stars);
+
+    const withVPrefix = (version) => {
+      if (!version) return "v--";
+      return version.startsWith("v") ? version : `v${version}`;
+    };
+
+    const setRepoValues = (stars, version) => {
+      if (typeof stars === "number" && starsEl) starsEl.textContent = formatStars(stars);
+      if (typeof version === "string" && versionEl) versionEl.textContent = withVPrefix(version);
+    };
+
+    const cacheKey = "docufy-repo-stats";
+    const cacheTtlMs = 6 * 60 * 60 * 1000;
+
+    const loadCachedRepoStats = () => {
+      try {
+        const raw = localStorage.getItem(cacheKey);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (!parsed || Date.now() - parsed.ts > cacheTtlMs) return null;
+        return parsed;
+      } catch {
+        return null;
+      }
+    };
+
+    const saveCachedRepoStats = (stars, version) => {
+      try {
+        localStorage.setItem(cacheKey, JSON.stringify({ stars, version, ts: Date.now() }));
+      } catch {
+        // no-op
+      }
+    };
+
+    const fetchRepoStats = async () => {
+      if (!repoLink || !starsEl || !versionEl) return;
+      const cached = loadCachedRepoStats();
+      if (cached) {
+        setRepoValues(cached.stars, cached.version);
+        return;
+      }
+
+      try {
+        const repoRes = await fetch("https://api.github.com/repos/mlihgenel/docufy", {
+          headers: { Accept: "application/vnd.github+json" }
+        });
+        if (!repoRes.ok) return;
+        const repoData = await repoRes.json();
+
+        let version = "";
+        const releaseRes = await fetch("https://api.github.com/repos/mlihgenel/docufy/releases/latest", {
+          headers: { Accept: "application/vnd.github+json" }
+        });
+        if (releaseRes.ok) {
+          const releaseData = await releaseRes.json();
+          version = releaseData?.tag_name || "";
+        } else {
+          const tagsRes = await fetch("https://api.github.com/repos/mlihgenel/docufy/tags?per_page=1", {
+            headers: { Accept: "application/vnd.github+json" }
+          });
+          if (tagsRes.ok) {
+            const tags = await tagsRes.json();
+            version = Array.isArray(tags) && tags[0] ? tags[0].name || "" : "";
+          }
+        }
+
+        const stars = Number(repoData?.stargazers_count);
+        setRepoValues(stars, version);
+        saveCachedRepoStats(stars, version);
+      } catch {
+        // no-op
+      }
+    };
+
+    void fetchRepoStats();
+  })();
+</script>

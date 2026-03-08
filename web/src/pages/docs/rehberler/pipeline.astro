@@ -1,0 +1,45 @@
+---
+import DocsLayout from "../../../layouts/DocsLayout.astro";
+---
+
+<DocsLayout title="Pipeline" description="Çok adımlı JSON akışlarıyla otomasyon">
+  <h2>Çalıştırma</h2>
+  <pre><code>docufy pipeline run ./pipeline.json
+docufy pipeline run ./pipeline.json --profile social-story --strip-metadata</code></pre>
+
+  <h2>Raporlama</h2>
+  <pre><code>docufy pipeline run ./pipeline.json \
+  --report json --report-file ./reports/pipeline.json</code></pre>
+
+  <h2>Resume</h2>
+  <pre><code>docufy pipeline run ./pipeline.json \
+  --resume-from-report ./reports/pipeline.json</code></pre>
+
+  <h2>Spec özeti</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Alan</th>
+        <th>Zorunlu</th>
+        <th>Açıklama</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>input</code></td>
+        <td>Evet</td>
+        <td>Başlangıç dosyası</td>
+      </tr>
+      <tr>
+        <td><code>steps[].type</code></td>
+        <td>Evet</td>
+        <td><code>convert</code>, <code>extract-audio</code>, <code>audio-normalize</code></td>
+      </tr>
+      <tr>
+        <td><code>steps[].to</code></td>
+        <td>Kısmi</td>
+        <td>Hedef format (adıma göre zorunluluk değişir)</td>
+      </tr>
+    </tbody>
+  </table>
+</DocsLayout>

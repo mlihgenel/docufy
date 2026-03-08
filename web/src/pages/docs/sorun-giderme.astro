@@ -1,0 +1,22 @@
+---
+import DocsLayout from "../../layouts/DocsLayout.astro";
+---
+
+<DocsLayout title="Sorun Giderme" description="Sık görülen kurulum ve kullanım hataları">
+  <h2>`command not found: docufy`</h2>
+  <p>Go bin dizini PATH içinde değil. PATH ayarlarını kurulum sayfasına göre güncelle.</p>
+
+  <h2>FFmpeg bulunamadı</h2>
+  <p>FFmpeg kur ve terminalden `ffmpeg -version` komutunun çalıştığını doğrula.</p>
+
+  <h2>Eski help/versiyon görünüyor</h2>
+  <p>Farklı bir binary PATH'te önce geliyor olabilir. `which docufy` ile aktif binary yolunu kontrol et.</p>
+
+  <h2>Dönüşüm desteklenmiyor hatası</h2>
+  <p>Kaynak ve hedef format kombinasyonunu `docufy formats --from <format>` ile doğrula.</p>
+
+  <h2>JSON raporla devam etme</h2>
+  <p>
+    Batch veya pipeline job yarıda kalırsa `--resume-from-report` ile başarılı adımları atlayarak devam et.
+  </p>
+</DocsLayout>

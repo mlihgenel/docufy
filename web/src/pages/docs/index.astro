@@ -1,0 +1,14 @@
+---
+import DocsLayout from "../../layouts/DocsLayout.astro";
+import { withBase } from "../../lib/paths";
+---
+
+<DocsLayout title="Docufy Dokümantasyon" description="Kurulum, rehberler ve sorun giderme içerikleri">
+  <p>Bu dokümantasyon, README içeriğini daha hızlı taranabilir ve adım adım uygulanabilir bir yapıda sunar.</p>
+  <ul>
+    <li><a href={withBase("/docs/kurulum/")}>Kurulum</a></li>
+    <li><a href={withBase("/docs/hizli-baslangic/")}>Hızlı Başlangıç</a></li>
+    <li><a href={withBase("/docs/rehberler/tek-dosya-donusturme/")}>Rehberler</a></li>
+    <li><a href={withBase("/docs/sorun-giderme/")}>Sorun Giderme</a></li>
+  </ul>
+</DocsLayout>

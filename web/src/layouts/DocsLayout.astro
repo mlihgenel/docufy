@@ -1,0 +1,28 @@
+---
+import DocsSidebar from "../components/DocsSidebar.astro";
+import MainLayout from "./MainLayout.astro";
+import { normalizePathname } from "../lib/paths";
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description = "Docufy dokümantasyonu" } = Astro.props as Props;
+const currentPath = normalizePathname(Astro.url.pathname);
+---
+
+<MainLayout title={`${title} | Docufy Docs`} description={description}>
+  <main class="docs-shell">
+    <aside>
+      <DocsSidebar currentPath={currentPath} />
+    </aside>
+    <article class="docs-article">
+      <header class="docs-article__header">
+        <h1>{title}</h1>
+        <p>{description}</p>
+      </header>
+      <slot />
+    </article>
+  </main>
+</MainLayout>

@@ -1,0 +1,25 @@
+---
+import DocsLayout from "../../layouts/DocsLayout.astro";
+---
+
+<DocsLayout title="Kurulum" description="Docufy kurulum adımları ve PATH ayarı">
+  <h2>Go ile kurulum</h2>
+  <pre><code>go install github.com/mlihgenel/docufy/v2/cmd/docufy@latest</code></pre>
+
+  <h2>PATH ayarı</h2>
+  <p>
+    `go env GOBIN` doluysa o dizini, boş ise `$(go env GOPATH)/bin` dizinini PATH'e eklemelisin.
+  </p>
+  <pre><code>echo 'export PATH="$PATH:$(go env GOPATH)/bin"' >> ~/.zshrc
+source ~/.zshrc</code></pre>
+
+  <h2>Kontrol</h2>
+  <pre><code>docufy --version
+docufy --help</code></pre>
+
+  <h2>Kaynaktan derleme</h2>
+  <pre><code>git clone https://github.com/mlihgenel/docufy.git
+cd docufy
+go build -o docufy ./cmd/docufy
+./docufy --help</code></pre>
+</DocsLayout>

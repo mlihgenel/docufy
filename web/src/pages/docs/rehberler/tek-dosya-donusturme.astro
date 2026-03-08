@@ -1,0 +1,22 @@
+---
+import DocsLayout from "../../../layouts/DocsLayout.astro";
+---
+
+<DocsLayout title="Tek Dosya Dönüştürme" description="`convert` komutuyla hızlı dönüşüm senaryoları">
+  <h2>Belge dönüştürme</h2>
+  <pre><code>docufy convert belge.md --to pdf
+docufy convert notlar.docx --to txt</code></pre>
+
+  <h2>Görsel dönüştürme</h2>
+  <pre><code>docufy convert IMG_1234.HEIC --to png
+docufy convert fotograf.png --to webp
+docufy convert fotograf.jpg --to jpg --target-size 500kb</code></pre>
+
+  <h2>Video dönüştürme</h2>
+  <pre><code>docufy convert klip.mp4 --to gif --quality 80
+docufy convert klip.mp4 --to mp4 --preset story --resize-mode pad</code></pre>
+
+  <h2>Profil kullanımı</h2>
+  <pre><code>docufy convert klip.mp4 --to mp4 --profile social-story
+docufy convert kamera.mov --to mp4 --strip-metadata</code></pre>
+</DocsLayout>

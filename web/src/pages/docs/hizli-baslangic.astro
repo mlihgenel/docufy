@@ -1,0 +1,26 @@
+---
+import DocsLayout from "../../layouts/DocsLayout.astro";
+---
+
+<DocsLayout title="Hızlı Başlangıç" description="Docufy ile ilk 10 dakika">
+  <h2>Yardım menüsü</h2>
+  <pre><code>docufy --help
+docufy help convert
+docufy help batch
+docufy help watch</code></pre>
+
+  <h2>Tek dosya dönüştürme</h2>
+  <pre><code>docufy convert rapor.md --to pdf
+docufy convert fotograf.jpeg --to png
+docufy convert klip.mp4 --to gif --quality 80</code></pre>
+
+  <h2>Toplu dönüştürme</h2>
+  <pre><code>docufy batch ./resimler --from jpg --to png --recursive
+docufy batch ./resimler --from jpg --to png --dry-run</code></pre>
+
+  <h2>Watch modu</h2>
+  <pre><code>docufy watch ./incoming --from webp --to jpg</code></pre>
+
+  <h2>İnteraktif mod</h2>
+  <pre><code>docufy</code></pre>
+</DocsLayout>

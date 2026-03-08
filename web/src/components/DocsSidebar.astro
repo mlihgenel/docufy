@@ -1,0 +1,29 @@
+---
+import { docsNav, isNavItemActive } from "../lib/docs-nav";
+import { withBase } from "../lib/paths";
+
+interface Props {
+  currentPath: string;
+}
+
+const { currentPath } = Astro.props as Props;
+---
+
+<nav class="docs-sidebar" aria-label="Doküman menüsü">
+  {
+    docsNav.map((section) => (
+      <section class="docs-sidebar__section">
+        <h2>{section.title}</h2>
+        <ul>
+          {section.items.map((item) => (
+            <li>
+              <a class:list={["docs-sidebar__link", isNavItemActive(currentPath, item.href) && "active"]} href={withBase(item.href)}>
+                {item.title}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    ))
+  }
+</nav>
