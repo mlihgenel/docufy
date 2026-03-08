@@ -3,6 +3,7 @@ module github.com/mlihgenel/docufy/v2
 go 1.25.0
 
 require (
+	github.com/HugoSmits86/nativewebp v1.2.1
 	github.com/charmbracelet/bubbletea v1.3.10
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/fsnotify/fsnotify v1.9.0
@@ -15,7 +16,6 @@ require (
 )
 
 require (
-	github.com/HugoSmits86/nativewebp v1.2.1 // indirect
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/charmbracelet/colorprofile v0.4.2 // indirect
 	github.com/charmbracelet/x/ansi v0.11.6 // indirect
