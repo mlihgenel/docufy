@@ -1,0 +1,72 @@
+---
+import { withBase } from "../lib/paths";
+import type { HomeFeature, HomeIcon } from "../lib/home-content";
+
+interface Props {
+  item: HomeFeature;
+  variant?: "feature" | "scope" | "compact";
+}
+
+const { item, variant = "feature" } = Astro.props as Props;
+
+const iconPaths: Record<HomeIcon, string> = {
+  document:
+    "M8 3h7l4 4v14H8a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm7 1.5V8h3.5M10 12h8M10 15h8M10 18h6",
+  image:
+    "M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6Zm4 9 2.6-3.2a1 1 0 0 1 1.56 0L14 14l1.4-1.7a1 1 0 0 1 1.55 0L19 15M9 9.5h.01",
+  audio:
+    "M5 16v-4a1 1 0 0 1 1-1h3l5-4v10l-5-4H6a1 1 0 0 1-1-1Zm11 3a5 5 0 0 0 0-14M18 16.5a2.5 2.5 0 0 0 0-7",
+  video:
+    "M5 7a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v1.2l3-2v11.6l-3-2V17a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V7Z",
+  trim:
+    "M5 7h5M5 17h5M11 6c2.8 0 5 2.2 5 5v6M11 18c2.8 0 5-2.2 5-5V7M5 12h6",
+  extract:
+    "M12 4v10m0 0-3-3m3 3 3-3M5 18h14M7 20h10",
+  snapshot:
+    "M4 8a2 2 0 0 1 2-2h2l1.2-2h5.6L16 6h2a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8Zm8 9a3.5 3.5 0 1 0 0-7a3.5 3.5 0 0 0 0 7",
+  merge:
+    "M4 7h6l3 3m0 0 3-3h4M4 17h6l3-3m0 0 3 3h4",
+  resize:
+    "M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5M9 12h6",
+  normalize:
+    "M5 15v-6m4 8V7m4 12V5m4 9v-4m-9 2h8",
+  metadata:
+    "M4 6a2 2 0 0 1 2-2h7l5 5v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6Zm8 0v4h4M8 15h8M8 12h4",
+  automation:
+    "M12 3v3M12 18v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M3 12h3M18 12h3M4.9 19.1 7 17M17 7l2.1-2.1M15.5 12a3.5 3.5 0 1 1-7 0a3.5 3.5 0 0 1 7 0Z"
+};
+
+const detailHref = withBase(item.docHref);
+---
+
+<article class:list={["home-feature-card", `home-feature-card--${variant}`]}>
+  <div class="home-feature-card__head">
+    <span class="home-feature-card__icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24">
+        <path
+          d={iconPaths[item.icon]}
+          fill="none"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="1.8"
+        />
+      </svg>
+    </span>
+    <h3>{item.category}</h3>
+  </div>
+
+  {variant !== "scope" && item.highlights.length > 0 && (
+    <ul class="home-feature-card__highlights">
+      {item.highlights.map((line) => <li>{line}</li>)}
+    </ul>
+  )}
+
+  {item.transforms.length > 0 && (
+    <ul class="home-feature-card__transforms">
+      {item.transforms.map((line) => <li>{line}</li>)}
+    </ul>
+  )}
+
+  <a class="home-feature-card__link" href={detailHref}>Detayli kullanim</a>
+</article>

@@ -55,5 +55,63 @@ const ogImage = withBase("/assets/mainmenu.png");
     <SiteHeader />
     <slot />
     <SiteFooter />
+    <script is:inline>
+      (() => {
+        const copyIcon =
+          '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M16 1H6a2 2 0 0 0-2 2v12h2V3h10V1zm3 4H10a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zm0 16H10V7h9v14z"/></svg>';
+
+        const fallbackCopy = (text) => {
+          const textarea = document.createElement("textarea");
+          textarea.value = text;
+          textarea.setAttribute("readonly", "true");
+          textarea.style.position = "fixed";
+          textarea.style.opacity = "0";
+          document.body.appendChild(textarea);
+          textarea.select();
+          document.execCommand("copy");
+          textarea.remove();
+        };
+
+        const copyText = async (text) => {
+          if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(text);
+            return;
+          }
+          fallbackCopy(text);
+        };
+
+        const codeBlocks = document.querySelectorAll("pre");
+        for (const pre of codeBlocks) {
+          if (pre.dataset.copyReady === "true") continue;
+          const code = pre.querySelector("code");
+          if (!code) continue;
+          pre.dataset.copyReady = "true";
+
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "code-copy-btn";
+          button.setAttribute("aria-label", "Kodu kopyala");
+          button.innerHTML = copyIcon;
+
+          button.addEventListener("click", async () => {
+            const text = (code.textContent || "").trimEnd();
+            if (!text) return;
+            try {
+              await copyText(text);
+              button.classList.add("copied");
+              button.setAttribute("aria-label", "Kopyalandı");
+              setTimeout(() => {
+                button.classList.remove("copied");
+                button.setAttribute("aria-label", "Kodu kopyala");
+              }, 1200);
+            } catch {
+              button.setAttribute("aria-label", "Kopyalama başarısız");
+            }
+          });
+
+          pre.appendChild(button);
+        }
+      })();
+    </script>
   </body>
 </html>
