@@ -79,20 +79,42 @@ const docsFallbackUrl = withBase("/docs/");
 <header class="site-header">
   <div class="site-header__container">
     <div class="site-header__top">
-      <a class="site-brand" href={withBase("/")} aria-label="Docufy ana sayfa">
-        <img
-          class="site-brand__logo site-brand__logo--dark"
-          src={withBase("/assets/docufy-white-logo.svg")}
-          alt="Docufy"
-          loading="eager"
-        />
-        <img
-          class="site-brand__logo site-brand__logo--light"
-          src={withBase("/assets/docufy-black-logo.svg")}
-          alt="Docufy"
-          loading="eager"
-        />
-      </a>
+      <div class="site-header__identity">
+        <button
+          class="menu-toggle"
+          type="button"
+          data-menu-toggle
+          aria-controls="site-main-nav"
+          aria-expanded="false"
+          aria-label="Menüyü aç"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              fill="none"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.9"
+              d="M4 6.5h16M4 12h16M4 17.5h16"
+            />
+          </svg>
+          <span class="sr-only">Menü</span>
+        </button>
+        <a class="site-brand" href={withBase("/")} aria-label="Docufy ana sayfa">
+          <img
+            class="site-brand__logo site-brand__logo--dark"
+            src={withBase("/assets/docufy-white-logo.svg")}
+            alt="Docufy"
+            loading="eager"
+          />
+          <img
+            class="site-brand__logo site-brand__logo--light"
+            src={withBase("/assets/docufy-black-logo.svg")}
+            alt="Docufy"
+            loading="eager"
+          />
+        </a>
+      </div>
       <div class="site-header__tools">
         <button class="theme-toggle" type="button" data-theme-toggle aria-label="Tema değiştir">
           <span class="sr-only">Tema</span>
@@ -147,7 +169,23 @@ const docsFallbackUrl = withBase("/docs/");
         </a>
       </div>
     </div>
-    <nav class="site-nav" aria-label="Ana menü">
+    <nav id="site-main-nav" class="site-nav" data-site-nav data-open="false" aria-label="Ana menü">
+      <div class="site-nav__drawer-head">
+        <span class="site-nav__drawer-title">Menü</span>
+        <button class="site-nav__close" type="button" data-menu-close aria-label="Menüyü kapat">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              fill="none"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.9"
+              d="M6 6l12 12M18 6 6 18"
+            />
+          </svg>
+          <span class="sr-only">Kapat</span>
+        </button>
+      </div>
       {
         navItems.map((item) => {
           const isActive =
@@ -162,13 +200,25 @@ const docsFallbackUrl = withBase("/docs/");
         })
       }
     </nav>
+    <button
+      class="site-nav-overlay"
+      type="button"
+      data-site-nav-overlay
+      aria-label="Menüyü kapat"
+      hidden
+    ></button>
   </div>
 </header>
 
 <script is:inline define:vars={{ searchPages, docsFallbackUrl }}>
   (() => {
     const root = document.documentElement;
-    const button = document.querySelector("[data-theme-toggle]");
+    const themeButton = document.querySelector("[data-theme-toggle]");
+    const menuToggle = document.querySelector("[data-menu-toggle]");
+    const menuClose = document.querySelector("[data-menu-close]");
+    const menuOverlay = document.querySelector("[data-site-nav-overlay]");
+    const menuPanel = document.querySelector("[data-site-nav]");
+    const menuMediaQuery = window.matchMedia("(max-width: 980px)");
     const storageKey = "docufy-theme";
     const moonIcon =
       '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M21 14.06A9 9 0 1 1 9.94 3a7 7 0 1 0 11.06 11.06z"/></svg>';
@@ -179,10 +229,10 @@ const docsFallbackUrl = withBase("/docs/");
 
     const apply = (theme) => {
       root.setAttribute("data-theme", theme);
-      if (!button) return;
-      button.innerHTML = `<span class="theme-toggle__icon">${theme === "dark" ? sunIcon : moonIcon}</span><span class="sr-only">Tema</span>`;
-      button.setAttribute("aria-pressed", theme === "light" ? "true" : "false");
-      button.setAttribute(
+      if (!themeButton) return;
+      themeButton.innerHTML = `<span class="theme-toggle__icon">${theme === "dark" ? sunIcon : moonIcon}</span><span class="sr-only">Tema</span>`;
+      themeButton.setAttribute("aria-pressed", theme === "light" ? "true" : "false");
+      themeButton.setAttribute(
         "aria-label",
         theme === "dark" ? "Açık temaya geç" : "Koyu temaya geç"
       );
@@ -190,7 +240,7 @@ const docsFallbackUrl = withBase("/docs/");
 
     apply(getTheme());
 
-    button?.addEventListener("click", () => {
+    themeButton?.addEventListener("click", () => {
       const next = getTheme() === "dark" ? "light" : "dark";
       apply(next);
       try {
@@ -199,6 +249,39 @@ const docsFallbackUrl = withBase("/docs/");
         // no-op
       }
     });
+
+    const setMenuState = (isOpen) => {
+      if (!menuPanel || !menuToggle || !menuOverlay) return;
+      const shouldOpen = Boolean(isOpen && menuMediaQuery.matches);
+      menuPanel.setAttribute("data-open", shouldOpen ? "true" : "false");
+      menuOverlay.hidden = !shouldOpen;
+      menuOverlay.setAttribute("data-open", shouldOpen ? "true" : "false");
+      menuToggle.setAttribute("aria-expanded", shouldOpen ? "true" : "false");
+      menuToggle.setAttribute("aria-label", shouldOpen ? "Menüyü kapat" : "Menüyü aç");
+      document.body.toggleAttribute("data-nav-open", shouldOpen);
+    };
+
+    const closeMenu = () => setMenuState(false);
+
+    menuToggle?.addEventListener("click", () => {
+      const isOpen = menuPanel?.getAttribute("data-open") === "true";
+      setMenuState(!isOpen);
+    });
+    menuClose?.addEventListener("click", closeMenu);
+    menuOverlay?.addEventListener("click", closeMenu);
+    menuPanel?.querySelectorAll("a").forEach((link) => {
+      link.addEventListener("click", closeMenu);
+    });
+    const handleViewportChange = (event) => {
+      if (!event.matches) closeMenu();
+    };
+    if (typeof menuMediaQuery.addEventListener === "function") {
+      menuMediaQuery.addEventListener("change", handleViewportChange);
+    }
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") closeMenu();
+    });
+    closeMenu();
 
     const repoLink = document.querySelector("[data-repo-stats]");
     const starsEl = repoLink?.querySelector("[data-repo-stars]");
